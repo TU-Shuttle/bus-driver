@@ -25,6 +25,8 @@ composeBom = "2024.12.01"
 composeNavigation = "2.9.0"
 hiltNavigationCompose = "1.2.0"
 accompanistPermissions = "0.34.0"
+ktlint = "14.0.1"
+detekt = "1.23.8"
 
 [libraries]
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
@@ -73,4 +75,6 @@ accompanist-permissions = { group = "com.google.accompanist", name = "accompanis
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 

@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
 
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
@@ -47,7 +49,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -55,11 +57,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
@@ -109,16 +114,51 @@ dependencies {
     // DataStore
     implementation(libs.androidx.datastore.preferences)
 
-    /* Hilt */
+    // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
 
-    /* SplashScreen */
+    // SplashScreen
     implementation(libs.androidx.core.splashscreen)
 
-    /* Naver Map SDK */
+    // Naver Map SDK
     implementation(libs.naver.map.sdk)
 
-    /* Google Play Services Location */
+    // Google Play Services Location
     implementation(libs.play.services.location)
+}
+
+// ktlint 설정
+ktlint {
+    version.set("1.2.1")
+    debug.set(false)
+    verbose.set(true)
+    android.set(true)
+    outputToConsole.set(true)
+    outputColorName.set("RED")
+    ignoreFailures.set(false)
+    enableExperimentalRules.set(true)
+    filter {
+        exclude("**/generated/**")
+        exclude("**/build/**")
+        include("**/kotlin/**")
+    }
+}
+
+// detekt 설정
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom(file("$rootDir/detekt.yml"))
+    baseline = file("$rootDir/detekt-baseline.xml")
+}
+
+// detekt 리포트 설정 (task 레벨)
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        txt.required.set(false)
+        sarif.required.set(true)
+    }
 }

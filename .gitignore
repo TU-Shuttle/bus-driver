@@ -9,3 +9,4 @@ local.properties
 .externalNativeBuild
 .cxx
 .env
+detekt-baseline.xml
