@@ -1,0 +1,46 @@
+name: 린트 체크
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: 코드 품질 검사
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x gradlew
+
+      - name: ktlint 체크 실행
+        run: ./gradlew ktlintCheck --no-daemon
+
+      - name: detekt 실행
+        run: ./gradlew detekt --no-daemon
+
+      - name: detekt 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-reports
+          path: app/build/reports/detekt/
+          retention-days: 7
+
+      - name: ktlint 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ktlint-reports
+          path: app/build/reports/ktlint/
+          retention-days: 7

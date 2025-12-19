@@ -1,0 +1,49 @@
+name: 자동 포맷팅
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  format:
+    name: 코드 자동 포맷팅
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x gradlew
+
+      - name: ktlint 자동 포맷팅 실행
+        run: ./gradlew ktlintFormat --no-daemon
+
+      - name: 변경사항 확인
+        id: verify-changed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 변경사항 커밋
+        if: steps.verify-changed.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "style: ktlint 자동 포맷팅 적용"
+          git push
