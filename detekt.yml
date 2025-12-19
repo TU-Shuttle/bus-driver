@@ -1,0 +1,223 @@
+build:
+  maxIssues: 0
+  weights:
+    complexity: 2
+    LongParameterList: 1
+    style: 1
+    naming: 1
+    performance: 2
+
+processors:
+  active: true
+  exclude:
+    - 'DetektProgressListener'
+    - 'FunctionCountProcessor'
+    - 'PropertyCountProcessor'
+    - 'PackageCountProcessor'
+    - 'KtFileCountProcessor'
+
+console-reports:
+  active: true
+  exclude:
+    - 'ProjectStatisticsReport'
+    - 'ComplexityReport'
+    - 'NotificationReport'
+    - 'FindingsReport'
+
+output-reports:
+  active: true
+  exclude:
+    - 'HtmlOutputReport'
+    - 'TxtOutputReport'
+
+complexity:
+  active: true
+  ComplexCondition:
+    active: true
+    threshold: 4
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 10
+    excludes: ['**/ui/map/MapScreen.kt']
+  CognitiveComplexMethod:
+    active: true
+    threshold: 15
+    excludes: ['**/ui/map/MapScreen.kt']
+  LongMethod:
+    active: true
+    threshold: 60
+    excludes: ['**/ui/map/MapScreen.kt']
+  LongParameterList:
+    active: true
+    functionThreshold: 6
+    constructorThreshold: 6
+    ignoreDefaultParameters: true
+  NestedBlockDepth:
+    active: true
+    threshold: 4
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 11
+    thresholdInClasses: 11
+    thresholdInInterfaces: 11
+    thresholdInObjects: 11
+    thresholdInEnums: 11
+
+style:
+  active: true
+  ForbiddenComment:
+    active: true
+    comments: ['TODO:', 'FIXME:', 'STOPSHIP:']
+  MagicNumber:
+    active: true
+    ignoreNumbers: ['-1', '0', '1', '2', '4']
+    ignoreHashCodeFunction: true
+    ignorePropertyDeclaration: true
+    ignoreConstantDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: false
+    excludes: ['**/ui/theme/Color.kt', '**/ui/theme/Type.kt', '**/test/**']
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+    excludePackageStatements: true
+    excludeImportStatements: true
+    excludeCommentStatements: false
+  WildcardImport:
+    active: true
+    excludes: ['**/ui/common/BottomNavigationBar.kt', '**/domain/util/LocationUtils.kt']
+  NewLineAtEndOfFile:
+    active: true
+  TrailingWhitespace:
+    active: true
+  UnusedImports:
+    active: true
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated: ['Suppress', 'Preview']
+  UnusedPrivateClass:
+    active: true
+  UnnecessaryAbstractClass:
+    active: true
+  UnnecessaryParentheses:
+    active: true
+  UnnecessaryInheritance:
+    active: true
+  UnnecessaryApply:
+    active: true
+  UnnecessaryLet:
+    active: true
+  ReturnCount:
+    active: true
+    max: 3
+    excludedFunctions: ['equals', 'toString', 'hashCode']
+    excludeLabeled: false
+    excludeReturnFromLambda: true
+    excludeGuardClauses: false
+  ThrowsCount:
+    active: true
+    max: 3
+
+naming:
+  active: true
+  ClassNaming:
+    active: true
+    classPattern: '^[A-Z][a-zA-Z0-9]*$'
+  PackageNaming:
+    active: true
+    packagePattern: '^[a-z]+(\.[a-z][a-z0-9]*)*$'
+  FunctionNaming:
+    active: true
+    functionPattern: '^([a-z][a-zA-Z0-9]*|[A-Z][a-zA-Z0-9]*)$'
+    excludeClassPattern: '.*Screen|.*ViewModel|.*Activity|.*Fragment|.*Composable'
+    ignoreOverridden: true
+  VariableNaming:
+    active: true
+    variablePattern: '^(_)?[a-z][a-zA-Z0-9]*$|^[A-Z][a-zA-Z0-9]*$'
+    privateVariablePattern: '^(_)?[a-z][a-zA-Z0-9]*$|^[A-Z][a-zA-Z0-9]*$'
+    excludeClassPattern: '.*Screen|.*ViewModel|.*Activity|.*Fragment|.*Composable'
+    ignoreOverridden: true
+  EnumNaming:
+    active: true
+    enumEntryPattern: '^[A-Z][A-Z_0-9]*$'
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '^[A-Z][A-Z_0-9]*$'
+    propertyPattern: '^[a-z][a-zA-Z0-9]*$|^[A-Z][a-zA-Z0-9]*$'
+    privatePropertyPattern: '^(_)?[a-z][a-zA-Z0-9]*$|^[A-Z][a-zA-Z0-9]*$'
+  NonBooleanPropertyPrefixedWithIs:
+    active: true
+  MemberNameEqualsClassName:
+    active: true
+    ignoreOverridden: true
+
+performance:
+  active: true
+  SpreadOperator:
+    active: true
+  ForEachOnRange:
+    active: true
+  ArrayPrimitive:
+    active: true
+
+potential-bugs:
+  active: true
+  UnreachableCode:
+    active: true
+  UnconditionalJumpStatementInLoop:
+    active: true
+
+empty-blocks:
+  active: true
+  EmptyCatchBlock:
+    active: true
+  EmptyClassBlock:
+    active: true
+  EmptyDefaultConstructor:
+    active: true
+  EmptyDoWhileBlock:
+    active: true
+  EmptyElseBlock:
+    active: true
+  EmptyFinallyBlock:
+    active: true
+  EmptyForBlock:
+    active: true
+  EmptyFunctionBlock:
+    active: true
+  EmptyIfBlock:
+    active: true
+  EmptyInitBlock:
+    active: true
+  EmptySecondaryConstructor:
+    active: true
+  EmptyTryBlock:
+    active: true
+  EmptyWhenBlock:
+    active: true
+  EmptyWhileBlock:
+    active: true
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: true
+    exceptionNames: ['Error', 'Throwable']
+    excludes: ['**/data/util/NetworkErrorHandler.kt', '**/data/location/LocationDataSource.kt', '**/domain/usecase/InitializeAppUseCase.kt']
+  TooGenericExceptionThrown:
+    active: true
+    exceptionNames: ['Exception', 'Error', 'Throwable', 'RuntimeException']
+  SwallowedException:
+    active: true
+    ignoredExceptionTypes: ['InterruptedException', 'NumberFormatException']
+    allowedExceptionNameRegex: '.*'
+  PrintStackTrace:
+    active: true
+  RethrowCaughtException:
+    active: true
+
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: true
+  RedundantSuspendModifier:
+    active: true
