@@ -15,25 +15,19 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object MapModule {
-
     @Provides
     @Singleton
     fun provideLocationDataSource(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): LocationDataSource = LocationDataSource(context)
 
+    @Provides
+    @Singleton
+    fun provideMapRepository(locationDataSource: LocationDataSource): MapRepository =
+        MapRepositoryImpl(locationDataSource)
 
     @Provides
     @Singleton
-    fun provideMapRepository(
-        locationDataSource: LocationDataSource
-    ): MapRepository = MapRepositoryImpl(locationDataSource)
-
-
-    @Provides
-    @Singleton
-    fun provideGetCurrentLocationUseCase(
-        repository: MapRepository
-    ): GetCurrentLocationUseCase = GetCurrentLocationUseCase(repository)
+    fun provideGetCurrentLocationUseCase(repository: MapRepository): GetCurrentLocationUseCase =
+        GetCurrentLocationUseCase(repository)
 }
-

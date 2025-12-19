@@ -5,7 +5,6 @@ import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class DriverApplication : Application() {
-
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -16,4 +15,3 @@ class DriverApplication : Application() {
             private set
     }
 }
-

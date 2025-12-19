@@ -13,14 +13,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object TempModule {
+    @Provides
+    @Singleton
+    fun provideTempRepository(api: ApiService): TempRepository = TempRepositoryImpl(api)
 
     @Provides
     @Singleton
-    fun provideTempRepository(api: ApiService): TempRepository =
-        TempRepositoryImpl(api)
-
-    @Provides
-    @Singleton
-    fun provideGetTempListUseCase(repository: TempRepository): GetTempListUseCase =
-        GetTempListUseCase(repository)
+    fun provideGetTempListUseCase(repository: TempRepository): GetTempListUseCase = GetTempListUseCase(repository)
 }

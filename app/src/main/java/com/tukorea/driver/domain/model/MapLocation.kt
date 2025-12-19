@@ -9,6 +9,5 @@ package com.tukorea.driver.domain.model
 data class MapLocation(
     val latitude: Double,
     val longitude: Double,
-    val accuracy: Float = 0f
+    val accuracy: Float = 0f,
 )
-

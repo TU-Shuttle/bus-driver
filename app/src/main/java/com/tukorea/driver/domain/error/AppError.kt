@@ -6,7 +6,8 @@ package com.tukorea.driver.domain.error
  */
 sealed class AppError {
     object NetworkError : AppError()
+
     object UnknownError : AppError()
+
     data class CustomError(val errorMessage: String?) : AppError()
 }
-

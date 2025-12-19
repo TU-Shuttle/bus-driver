@@ -12,12 +12,12 @@ import com.tukorea.driver.ui.temp.TempScreen
 fun BusNavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.Map.route
+    startDestination: String = Screen.Map.route,
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier
+        modifier = modifier,
     ) {
         composable(Screen.Map.route) {
             MapScreen()

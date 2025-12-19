@@ -6,8 +6,10 @@ package com.tukorea.driver.domain.error
  */
 sealed class MapError {
     object LocationNotFound : MapError()
+
     object PermissionDenied : MapError()
+
     object Timeout : MapError()
+
     data class Unknown(val errorMessage: String?) : MapError()
 }
-

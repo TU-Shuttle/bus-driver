@@ -19,53 +19,57 @@ import javax.inject.Singleton
  * - Context는 DI를 통해 주입받아 테스트 가능성을 높입니다.
  */
 @Singleton
-class ErrorMapper @Inject constructor(
-    private val context: Context
-) {
-    /**
-     * AppError를 사용자용 메시지로 변환합니다.
-     */
-    fun AppError.toUserMessage(): String = when (this) {
-        AppError.NetworkError ->
-            context.getString(R.string.error_network)
+class ErrorMapper
+    @Inject
+    constructor(
+        private val context: Context,
+    ) {
+        /**
+         * AppError를 사용자용 메시지로 변환합니다.
+         */
+        fun AppError.toUserMessage(): String =
+            when (this) {
+                AppError.NetworkError ->
+                    context.getString(R.string.error_network)
 
-        AppError.UnknownError ->
-            context.getString(R.string.error_unknown)
+                AppError.UnknownError ->
+                    context.getString(R.string.error_unknown)
 
-        is AppError.CustomError ->
-            this.errorMessage ?: context.getString(R.string.error_generic)
+                is AppError.CustomError ->
+                    this.errorMessage ?: context.getString(R.string.error_generic)
+            }
+
+        /**
+         * MapError를 사용자용 메시지로 변환합니다.
+         */
+        fun MapError.toUserMessage(): String =
+            when (this) {
+                MapError.LocationNotFound ->
+                    context.getString(R.string.error_location_not_found)
+
+                MapError.PermissionDenied ->
+                    context.getString(R.string.error_location_permission)
+
+                MapError.Timeout ->
+                    context.getString(R.string.error_location_timeout)
+
+                is MapError.Unknown ->
+                    this.errorMessage ?: context.getString(R.string.error_unknown)
+            }
+
+        /**
+         * 아직 도메인 에러로 매핑되지 않은 예외를 위한 기본 매퍼입니다.
+         * (주로 Flow.catch { } 나 try-catch 에서 사용)
+         */
+        fun Throwable.toUserMessage(): String =
+            when (this) {
+                is SocketTimeoutException ->
+                    context.getString(R.string.error_timeout)
+
+                is UnknownHostException, is IOException ->
+                    context.getString(R.string.error_network)
+
+                else ->
+                    this.message ?: context.getString(R.string.error_unknown)
+            }
     }
-
-    /**
-     * MapError를 사용자용 메시지로 변환합니다.
-     */
-    fun MapError.toUserMessage(): String = when (this) {
-        MapError.LocationNotFound ->
-            context.getString(R.string.error_location_not_found)
-
-        MapError.PermissionDenied ->
-            context.getString(R.string.error_location_permission)
-
-        MapError.Timeout ->
-            context.getString(R.string.error_location_timeout)
-
-        is MapError.Unknown ->
-            this.errorMessage ?: context.getString(R.string.error_unknown)
-    }
-
-    /**
-     * 아직 도메인 에러로 매핑되지 않은 예외를 위한 기본 매퍼입니다.
-     * (주로 Flow.catch { } 나 try-catch 에서 사용)
-     */
-    fun Throwable.toUserMessage(): String = when (this) {
-        is SocketTimeoutException ->
-            context.getString(R.string.error_timeout)
-
-        is UnknownHostException, is IOException ->
-            context.getString(R.string.error_network)
-
-        else ->
-            this.message ?: context.getString(R.string.error_unknown)
-    }
-}
-

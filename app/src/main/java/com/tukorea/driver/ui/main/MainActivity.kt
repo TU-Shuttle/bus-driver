@@ -24,14 +24,14 @@ class MainActivity : ComponentActivity() {
             BusTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     val navController = rememberNavController()
 
                     BusNavGraph(
                         navController = navController,
                         startDestination = Screen.Map.route,
-                        modifier = Modifier
+                        modifier = Modifier,
                     )
                 }
             }

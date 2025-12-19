@@ -10,14 +10,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class TempRepositoryImpl @Inject constructor(
-    private val api: ApiService
-) : TempRepository {
-    override suspend fun getTemps(): AppResult<List<Temp>> {
-        return NetworkErrorHandler.handleNetworkRequest {
-            val response: TempResponse = api.getTemps()
-            response.data
+class TempRepositoryImpl
+    @Inject
+    constructor(
+        private val api: ApiService,
+    ) : TempRepository {
+        override suspend fun getTemps(): AppResult<List<Temp>> {
+            return NetworkErrorHandler.handleNetworkRequest {
+                val response: TempResponse = api.getTemps()
+                response.data
+            }
         }
     }
-}
-

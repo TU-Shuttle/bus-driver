@@ -39,7 +39,6 @@ import dagger.hilt.android.AndroidEntryPoint
 @SuppressLint("CustomSplashScreen")
 @AndroidEntryPoint
 class SplashActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { false }
@@ -53,7 +52,7 @@ class SplashActivity : ComponentActivity() {
                     onNavigateToMain = {
                         startActivity(Intent(this@SplashActivity, MainActivity::class.java))
                         finish()
-                    }
+                    },
                 )
             }
         }
@@ -63,7 +62,7 @@ class SplashActivity : ComponentActivity() {
 @Composable
 private fun SplashScreen(
     viewModel: SplashViewModel = hiltViewModel(),
-    onNavigateToMain: () -> Unit
+    onNavigateToMain: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -85,16 +84,17 @@ private fun SplashScreen(
 @Composable
 private fun SplashContent() {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Blue600),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Blue600),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Image(
             painter = painterResource(id = R.drawable.ic_launcher_foreground),
             contentDescription = stringResource(id = R.string.app_name),
-            modifier = Modifier.size(120.dp)
+            modifier = Modifier.size(120.dp),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -104,7 +104,7 @@ private fun SplashContent() {
             color = Color.White,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
         )
     }
 }

@@ -13,6 +13,5 @@ data class MapUiState(
     val isLoading: Boolean = false,
     val currentLocation: MapLocation? = null,
     val isLocationPermissionGranted: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
-

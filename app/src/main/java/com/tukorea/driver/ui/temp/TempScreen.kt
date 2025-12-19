@@ -27,19 +27,18 @@ import com.tukorea.driver.R
 import com.tukorea.driver.domain.model.Temp
 
 @Composable
-fun TempScreen(
-    viewModel: TempViewModel = hiltViewModel()
-) {
+fun TempScreen(viewModel: TempViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Button(
-            onClick = { viewModel.loadTemps() }
+            onClick = { viewModel.loadTemps() },
         ) {
             Text(text = stringResource(id = R.string.temp_load_button))
         }
@@ -50,24 +49,25 @@ fun TempScreen(
             state.isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
             state.error != null -> {
                 Text(
-                    text = stringResource(
-                        id = R.string.temp_error_prefix,
-                        state.error ?: ""
-                    ),
+                    text =
+                        stringResource(
+                            id = R.string.temp_error_prefix,
+                            state.error ?: "",
+                        ),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
             state.temps.isEmpty() -> {
                 Text(
                     text = stringResource(id = R.string.temp_empty),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             else -> {
@@ -80,11 +80,11 @@ fun TempScreen(
 @Composable
 private fun TempList(
     temps: List<Temp>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(temps) { temp ->
             TempItem(temp = temp)
@@ -95,20 +95,20 @@ private fun TempList(
 @Composable
 private fun TempItem(
     temp: Temp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         Text(
             text = temp.temp,
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
-

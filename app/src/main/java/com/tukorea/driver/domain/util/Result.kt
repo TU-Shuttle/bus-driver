@@ -11,7 +11,6 @@ import com.tukorea.driver.domain.error.MapError
  * @param E 에러 타입 (기본값: AppError)
  */
 sealed class Result<out T, out E> {
-
     data class Success<T>(val data: T) : Result<T, Nothing>()
 
     data class Error<E>(val error: E) : Result<Nothing, E>()
@@ -22,13 +21,12 @@ sealed class Result<out T, out E> {
     val isError: Boolean
         get() = this is Error
 
-
-    fun getOrNull(): T? = when (this) {
-        is Success -> data
-        is Error -> null
-    }
+    fun getOrNull(): T? =
+        when (this) {
+            is Success -> data
+            is Error -> null
+        }
 }
 
 typealias AppResult<T> = Result<T, AppError>
 typealias MapResult<T> = Result<T, MapError>
-
