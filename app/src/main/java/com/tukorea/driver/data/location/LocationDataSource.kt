@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -15,13 +16,21 @@ import com.tukorea.driver.domain.error.MapError
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.util.MapResult
 import com.tukorea.driver.domain.util.Result
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val LOCATION_TIMEOUT_MS = 10_000L
+private const val LOCATION_UPDATE_INTERVAL_MS = 5_000L
+private const val LOCATION_FASTEST_INTERVAL_MS = 2_000L
 
 @Singleton
 class LocationDataSource
@@ -112,8 +121,63 @@ class LocationDataSource
             }
         }
 
+        /**
+         * 백그라운드에서 지속적으로 위치 업데이트를 받아옵니다.
+         * Flow를 통해 위치 변경사항을 스트림으로 제공합니다.
+         *
+         * @return 위치 업데이트를 제공하는 Flow
+         */
+        fun getLocationUpdates(): Flow<MapLocation> = callbackFlow {
+            if (!isLocationPermissionGranted()) {
+                Log.w(TAG, "위치 권한이 없어 위치 업데이트를 시작할 수 없습니다.")
+                close()
+                return@callbackFlow
+            }
+
+            val locationRequest =
+                LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, LOCATION_UPDATE_INTERVAL_MS)
+                    .setMinUpdateIntervalMillis(LOCATION_FASTEST_INTERVAL_MS)
+                    .setMaxUpdateDelayMillis(LOCATION_UPDATE_INTERVAL_MS)
+                    .build()
+
+            val locationCallback =
+                object : LocationCallback() {
+                    override fun onLocationResult(locationResult: LocationResult) {
+                        locationResult.lastLocation?.let { location ->
+                            val mapLocation =
+                                MapLocation(
+                                    latitude = location.latitude,
+                                    longitude = location.longitude,
+                                    accuracy = location.accuracy,
+                                )
+                            Log.d(
+                                TAG,
+                                "위치 업데이트: lat=${mapLocation.latitude}, lng=${mapLocation.longitude}, accuracy=${mapLocation.accuracy}",
+                            )
+                            trySend(mapLocation)
+                        }
+                    }
+                }
+
+            @SuppressLint("MissingPermission")
+            val task = fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper(),
+            )
+
+            task.addOnFailureListener { exception ->
+                Log.e(TAG, "위치 업데이트 요청 실패", exception)
+                close(exception)
+            }
+
+            awaitClose {
+                Log.d(TAG, "위치 업데이트 중지")
+                fusedLocationClient.removeLocationUpdates(locationCallback)
+            }
+        }
+
         companion object {
-            // logcat 필터링 태그
             private const val TAG = "LocationDataSource"
         }
     }

@@ -155,4 +155,25 @@
 
     <!-- 예외 기반 에러 -->
     <string name="error_timeout">응답이 지연되고 있어요. 잠시 후 다시 시도해볼 수 있어요</string>
+
+    <!-- Driver 앱 전용 문자열 -->
+    <!-- 운행 상태 -->
+    <string name="driver_driving_status_title">운행 상태</string>
+    <string name="driver_driving_status_stop">운행 종료</string>
+    <string name="driver_driving_status_running">운행 중</string>
+    <string name="driver_driving_status_waiting">대기 중</string>
+
+    <!-- 운행 버튼 -->
+    <string name="driver_driving_button_start">운행</string>
+    <string name="driver_driving_button_waiting">대기</string>
+    <string name="driver_driving_button_stop">운행 종료</string>
+
+    <!-- 운행 상태 안내 메시지 -->
+    <string name="driver_driving_status_stop_message">운행 종료 상태입니다. 위치가 전송되지 않습니다.</string>
+    <string name="driver_driving_status_running_message">운행 중입니다. 위치가 서버로 전송됩니다.</string>
+    <string name="driver_driving_status_waiting_message">대기 중입니다. 위치가 서버로 전송됩니다.</string>
+
+    <!-- 네비게이션 -->
+    <string name="driver_nav_home">홈</string>
+    <string name="driver_nav_map">지도</string>
 </resources>

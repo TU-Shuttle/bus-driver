@@ -6,12 +6,6 @@ package com.tukorea.driver.ui.navigation
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
 
-    data object Calendar : Screen("calendar")
-
-    data object QuickRide : Screen("quickride")
-
-    data object Settings : Screen("settings")
-
     data object Map : Screen("map")
 
     data object Temp : Screen("temp")

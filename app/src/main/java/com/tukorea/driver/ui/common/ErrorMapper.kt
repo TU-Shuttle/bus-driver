@@ -50,6 +50,9 @@ class ErrorMapper
                 MapError.PermissionDenied ->
                     context.getString(R.string.error_location_permission)
 
+                MapError.NetworkError ->
+                    context.getString(R.string.error_network)
+
                 MapError.Timeout ->
                     context.getString(R.string.error_location_timeout)
 

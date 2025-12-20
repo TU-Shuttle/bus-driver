@@ -15,12 +15,25 @@ sealed class Result<out T, out E> {
 
     data class Error<E>(val error: E) : Result<Nothing, E>()
 
+    /**
+     * 성공 여부를 확인합니다.
+     * 간단한 boolean 체크가 필요할 때 사용합니다.
+     */
     val isSuccess: Boolean
         get() = this is Success
 
+    /**
+     * 에러 여부를 확인합니다.
+     * 간단한 boolean 체크가 필요할 때 사용합니다.
+     */
     val isError: Boolean
         get() = this is Error
 
+    /**
+     * 성공 시 데이터를 반환하고, 실패 시 null을 반환합니다.
+     * Optional 패턴처럼 사용할 때 유용합니다.
+     * 예: result.getOrNull()?.let { ... }
+     */
     fun getOrNull(): T? =
         when (this) {
             is Success -> data

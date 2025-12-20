@@ -1,8 +1,8 @@
 package com.tukorea.driver.domain.usecase
 
 import com.tukorea.driver.domain.model.Temp
-import com.tukorea.driver.domain.repository.TempRepository
 import com.tukorea.driver.domain.util.AppResult
+import com.tukorea.driver.domain.repository.TempRepository
 import javax.inject.Inject
 
 /**
