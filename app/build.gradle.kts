@@ -40,8 +40,8 @@ fun extractDomainFromUrl(url: String): String? {
 
 // network_security_config.xml 생성
 fun generateNetworkSecurityConfig(): String {
-    val baseUrl = getEnv("BASE_URL", "http://192.168.1.229:8080")
-    val wsUrl = getEnv("WS_URL", "ws://192.168.1.229:8080/ws")
+    val baseUrl = getEnv("BASE_URL")
+    val wsUrl = getEnv("WS_URL")
 
     val baseDomain = extractDomainFromUrl(baseUrl)
     val wsDomain = extractDomainFromUrl(wsUrl)
@@ -54,11 +54,6 @@ fun generateNetworkSecurityConfig(): String {
     // .env에서 읽은 도메인 추가
     baseDomain?.let { domains.add(it) }
     wsDomain?.let { domains.add(it) }
-
-    // 기본 개발 도메인 (에러 방지)
-    if (domains.isEmpty()) {
-        domains.add("192.168.1.229") // 임시 개발용
-    }
 
     val isHttps = baseUrl.startsWith("https://") || wsUrl.startsWith("wss://")
     val cleartextPermitted = !isHttps
@@ -96,13 +91,13 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL", "http://192.168.1.229:8080")}\"")
-            buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL", "ws://192.168.1.229:8080/ws")}\"")
+            buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
+            buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL")}\"")
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL", "https://myhomeservertest.ddns.net")}\"")
-            buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL", "wss://myhomeservertest.ddns.net/ws")}\"")
+            buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
+            buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
