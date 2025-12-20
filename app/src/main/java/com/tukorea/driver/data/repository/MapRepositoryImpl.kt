@@ -3,6 +3,7 @@ package com.tukorea.driver.data.repository
 import android.util.Log
 import com.tukorea.driver.data.api.ApiService
 import com.tukorea.driver.data.location.LocationDataSource
+import com.tukorea.driver.data.location.LocationForegroundService
 import com.tukorea.driver.data.util.NetworkErrorHandler
 import com.tukorea.driver.data.websocket.WebSocketDataSource
 import com.tukorea.driver.domain.error.MapError
@@ -11,6 +12,8 @@ import com.tukorea.driver.domain.repository.MapRepository
 import com.tukorea.driver.domain.util.MapResult
 import com.tukorea.driver.domain.util.Result
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.merge
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -41,16 +44,27 @@ class MapRepositoryImpl
 
         /**
          * LocationDataSource를 통해 위치 업데이트 Flow를 제공합니다.
+         * Foreground Service가 실행 중이면 Service의 위치도 병합합니다.
          */
         override fun getLocationUpdates(): Flow<MapLocation> {
-            return locationDataSource.getLocationUpdates()
+            val foregroundService = LocationForegroundService.getInstance()
+            return if (foregroundService != null) {
+                // Foreground Service가 실행 중이면 Service의 위치 Flow와 병합
+                merge(
+                    locationDataSource.getLocationUpdates(),
+                    foregroundService.locationFlow,
+                )
+            } else {
+                // Foreground Service가 없으면 기존 방식 사용
+                locationDataSource.getLocationUpdates()
+            }
         }
 
         /**
          * WebSocketDataSource를 통해 위치를 서버로 전송합니다.
          */
-        override fun sendLocation(busId: String, location: MapLocation) {
-            webSocketDataSource.sendLocation(busId, location)
+        override fun sendLocation(busId: String, location: MapLocation, status: String) {
+            webSocketDataSource.sendLocation(busId, location, status)
         }
 
         /**

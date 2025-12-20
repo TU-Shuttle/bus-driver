@@ -29,8 +29,9 @@ interface MapRepository {
      * 실시간 위치를 백엔드 서버로 전송합니다.
      * @param busId 버스/드라이버 ID
      * @param location 위치 정보
+     * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
      */
-    fun sendLocation(busId: String, location: MapLocation)
+    fun sendLocation(busId: String, location: MapLocation, status: String)
 
     /**
      * WebSocket 연결을 시작합니다.

@@ -15,9 +15,10 @@ class LocationQueue {
      * 큐에 위치 데이터를 추가합니다.
      * @param busId 버스/드라이버 ID
      * @param location 위치 정보
+     * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
      */
-    fun enqueue(busId: String, location: MapLocation) {
-        queue.offer(QueuedLocation(busId, location))
+    fun enqueue(busId: String, location: MapLocation, status: String) {
+        queue.offer(QueuedLocation(busId, location, status))
     }
 
     /**
@@ -55,5 +56,6 @@ class LocationQueue {
     data class QueuedLocation(
         val busId: String,
         val location: MapLocation,
+        val status: String,
     )
 }

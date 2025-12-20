@@ -5,16 +5,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tukorea.driver.domain.usecase.ConnectWebSocketUseCase
 import com.tukorea.driver.domain.usecase.DisconnectWebSocketUseCase
+import com.tukorea.driver.domain.usecase.GetBusIdUseCase
 import com.tukorea.driver.domain.usecase.GetCurrentLocationUseCase
 import com.tukorea.driver.domain.usecase.GetLocationUpdatesUseCase
 import com.tukorea.driver.domain.util.Result
 import com.tukorea.driver.domain.usecase.ObserveWebSocketConnectionStateUseCase
+import com.tukorea.driver.domain.model.DrivingStatus
+import com.tukorea.driver.domain.usecase.GetDrivingStatusUseCase
 import com.tukorea.driver.domain.usecase.SendLocationUseCase
 import com.tukorea.driver.ui.common.ErrorMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -37,6 +41,8 @@ class MapViewModel
         private val connectWebSocketUseCase: ConnectWebSocketUseCase,
         private val disconnectWebSocketUseCase: DisconnectWebSocketUseCase,
         private val observeWebSocketConnectionStateUseCase: ObserveWebSocketConnectionStateUseCase,
+        private val getDrivingStatusUseCase: GetDrivingStatusUseCase,
+        private val getBusIdUseCase: GetBusIdUseCase,
         private val errorMapper: ErrorMapper,
     ) : ViewModel() {
         private val _state = MutableStateFlow(MapUiState())
@@ -44,8 +50,6 @@ class MapViewModel
 
         private companion object {
             private const val TAG = "MapViewModel"
-            // TODO: 실제 버스/드라이버 ID로 변경 필요
-            private const val BUS_ID = "bus-001"
         }
 
         init {
@@ -54,6 +58,7 @@ class MapViewModel
             connectWebSocket()
             observeWebSocketState()
             startLocationUpdates()
+            observeDrivingStatusChanges()
         }
 
         override fun onCleared() {
@@ -141,7 +146,7 @@ class MapViewModel
         /**
          * 백그라운드에서 지속적으로 위치 업데이트를 받아옵니다.
          * 위치 권한이 허용된 경우에만 동작합니다.
-         * 위치 업데이트 시 자동으로 서버로 전송합니다.
+         * 운행/대기 중일 때만 위치를 서버로 전송합니다.
          */
         private fun startLocationUpdates() {
             if (!getCurrentLocationUseCase.isLocationPermissionGranted()) {
@@ -151,10 +156,13 @@ class MapViewModel
 
             Log.d(TAG, "백그라운드 위치 업데이트 시작")
             getLocationUpdatesUseCase()
-                .onEach { location ->
+                .combine(getDrivingStatusUseCase.drivingStatus) { location, drivingStatus ->
+                    Pair(location, drivingStatus)
+                }
+                .onEach { (location, drivingStatus) ->
                     Log.d(
                         TAG,
-                        "위치 업데이트 수신: 위도=${location.latitude}, 경도=${location.longitude}",
+                        "위치 업데이트 수신: 위도=${location.latitude}, 경도=${location.longitude}, 운행상태=$drivingStatus",
                     )
                     _state.value =
                         _state.value.copy(
@@ -163,8 +171,15 @@ class MapViewModel
                             error = null,
                         )
 
-                    // 위치 업데이트를 서버로 전송
-                    sendLocationUseCase(BUS_ID, location)
+                    // 운행/대기 중일 때만 위치를 서버로 전송
+                    if (drivingStatus == DrivingStatus.Running || drivingStatus == DrivingStatus.Waiting) {
+                        val busId = getBusIdUseCase()
+                        val statusString = drivingStatus.toServerString()
+                        Log.d(TAG, "운행 상태: $drivingStatus - 위치 전송")
+                        sendLocationUseCase(busId, location, statusString)
+                    } else {
+                        Log.d(TAG, "운행 종료 상태 - 위치 전송 안 함")
+                    }
                 }
                 .catch { exception ->
                     Log.e(TAG, "위치 업데이트 중 오류 발생", exception)
@@ -172,6 +187,28 @@ class MapViewModel
                         exception.toUserMessage()
                     }
                     _state.value = _state.value.copy(error = message)
+                }
+                .launchIn(viewModelScope)
+        }
+
+        /**
+         * 운행 상태 변경을 관찰하여 즉시 상태를 서버로 전송합니다.
+         * 운행 종료 시에도 상태를 DB에 저장하기 위함입니다.
+         */
+        /**
+         * 운행 상태 변경을 관찰하여 즉시 상태를 서버로 전송합니다.
+         * 운행 종료 시에도 상태를 DB에 저장하기 위함입니다.
+         */
+        private fun observeDrivingStatusChanges() {
+            getDrivingStatusUseCase.drivingStatus
+                .onEach { drivingStatus ->
+                    // 현재 위치가 있으면 즉시 상태와 함께 전송
+                    _state.value.currentLocation?.let { location ->
+                        val busId = getBusIdUseCase()
+                        val statusString = drivingStatus.toServerString()
+                        Log.d(TAG, "운행 상태 변경: $drivingStatus - 즉시 전송")
+                        sendLocationUseCase(busId, location, statusString)
+                    }
                 }
                 .launchIn(viewModelScope)
         }

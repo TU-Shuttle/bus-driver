@@ -16,8 +16,9 @@ class SendLocationUseCase
          * 위치 정보를 서버로 전송합니다.
          * @param busId 버스/드라이버 ID
          * @param location 위치 정보
+         * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
          */
-        operator fun invoke(busId: String, location: MapLocation) {
-            repository.sendLocation(busId, location)
+        operator fun invoke(busId: String, location: MapLocation, status: String) {
+            repository.sendLocation(busId, location, status)
         }
     }

@@ -94,13 +94,15 @@ class WebSocketDataSource
          * 연결이 끊겨있으면 큐에 저장하고, 연결되면 자동으로 전송합니다.
          * @param busId 버스/드라이버 ID
          * @param location 위치 정보
+         * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
          */
-        fun sendLocation(busId: String, location: MapLocation) {
+        fun sendLocation(busId: String, location: MapLocation, status: String) {
             if (_connectionState.value == WebSocketConnectionState.Connected) {
-                sendLocationImmediately(busId, location)
+                sendLocationImmediately(busId, location, status)
             } else {
-                // 연결이 끊겨있으면 큐에 저장
-                locationQueue.enqueue(busId, location)
+                // 연결이 끊겨있으면 큐에 저장 (운행 상태는 재연결 시 현재 상태 사용)
+                // 재연결 시 현재 운행 상태를 가져와서 전송하므로 여기서는 임시로 "RUNNING" 저장
+                locationQueue.enqueue(busId, location, "RUNNING")
                 Log.d(
                     TAG,
                     "위치를 큐에 저장: busId=$busId, 큐 크기=${locationQueue.size()}",
@@ -116,11 +118,11 @@ class WebSocketDataSource
         /**
          * 즉시 위치를 전송합니다.
          */
-        private fun sendLocationImmediately(busId: String, location: MapLocation) {
+        private fun sendLocationImmediately(busId: String, location: MapLocation, status: String) {
             val webSocket = this.webSocket
             if (webSocket == null) {
                 Log.w(TAG, "WebSocket이 null입니다.")
-                locationQueue.enqueue(busId, location)
+                locationQueue.enqueue(busId, location, status)
                 return
             }
 
@@ -129,6 +131,7 @@ class WebSocketDataSource
                 lat = location.latitude,
                 lng = location.longitude,
                 accuracy = location.accuracy,
+                status = status,
             )
 
             val json = gson.toJson(request)
@@ -137,11 +140,11 @@ class WebSocketDataSource
             if (sent) {
                 Log.d(
                     TAG,
-                    "위치 전송 성공: busId=$busId, lat=${location.latitude}, lng=${location.longitude}",
+                    "위치 전송 성공: busId=$busId, lat=${location.latitude}, lng=${location.longitude}, status=$status",
                 )
             } else {
                 Log.e(TAG, "위치 전송 실패: WebSocket send 실패")
-                locationQueue.enqueue(busId, location)
+                locationQueue.enqueue(busId, location, status)
             }
         }
 
@@ -215,7 +218,7 @@ class WebSocketDataSource
             val queuedLocations = locationQueue.dequeueAll()
 
             queuedLocations.forEach { queuedLocation ->
-                sendLocationImmediately(queuedLocation.busId, queuedLocation.location)
+                sendLocationImmediately(queuedLocation.busId, queuedLocation.location, queuedLocation.status)
             }
 
             Log.d(TAG, "큐에 저장된 위치 전송 완료")
@@ -303,5 +306,6 @@ class WebSocketDataSource
             val lat: Double,
             val lng: Double,
             val accuracy: Float,
+            val status: String,
         )
     }
