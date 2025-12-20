@@ -195,10 +195,6 @@ class MapViewModel
          * 운행 상태 변경을 관찰하여 즉시 상태를 서버로 전송합니다.
          * 운행 종료 시에도 상태를 DB에 저장하기 위함입니다.
          */
-        /**
-         * 운행 상태 변경을 관찰하여 즉시 상태를 서버로 전송합니다.
-         * 운행 종료 시에도 상태를 DB에 저장하기 위함입니다.
-         */
         private fun observeDrivingStatusChanges() {
             getDrivingStatusUseCase.drivingStatus
                 .onEach { drivingStatus ->
