@@ -50,21 +50,46 @@ class MapViewModel
 
         private companion object {
             private const val TAG = "MapViewModel"
+            @Volatile
+            private var isLocationUpdatesStarted = false
+            @Volatile
+            private var isWebSocketConnected = false
         }
 
         init {
             Log.d(TAG, "초기화: 위치 권한을 확인합니다.")
             checkLocationPermission()
-            connectWebSocket()
-            observeWebSocketState()
-            startLocationUpdates()
-            observeDrivingStatusChanges()
+            
+            // WebSocket 연결은 단일 인스턴스에서만 시작 (중복 방지)
+            synchronized(this) {
+                if (!isWebSocketConnected) {
+                    isWebSocketConnected = true
+                    connectWebSocket()
+                    observeWebSocketState()
+                } else {
+                    Log.d(TAG, "WebSocket 연결이 이미 시작되어 있습니다. 중복 연결을 건너뜁니다.")
+                    // 연결 상태만 관찰
+                    observeWebSocketState()
+                }
+            }
+            
+            // 위치 업데이트는 단일 인스턴스에서만 시작 (중복 방지)
+            synchronized(this) {
+                if (!isLocationUpdatesStarted) {
+                    isLocationUpdatesStarted = true
+                    startLocationUpdates()
+                    observeDrivingStatusChanges()
+                } else {
+                    Log.d(TAG, "위치 업데이트가 이미 시작되어 있습니다. 중복 시작을 건너뜁니다.")
+                }
+            }
         }
 
         override fun onCleared() {
             super.onCleared()
-            Log.d(TAG, "ViewModel 종료: WebSocket 연결 종료")
-            disconnectWebSocketUseCase()
+            Log.d(TAG, "ViewModel 종료")
+            // WebSocket 연결과 위치 업데이트는 다른 인스턴스가 사용할 수 있으므로
+            // 여기서는 disconnect하지 않음 (Application 생명주기와 함께 관리)
         }
 
         /**

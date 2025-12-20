@@ -100,12 +100,11 @@ class WebSocketDataSource
             if (_connectionState.value == WebSocketConnectionState.Connected) {
                 sendLocationImmediately(busId, location, status)
             } else {
-                // 연결이 끊겨있으면 큐에 저장 (운행 상태는 재연결 시 현재 상태 사용)
-                // 재연결 시 현재 운행 상태를 가져와서 전송하므로 여기서는 임시로 "RUNNING" 저장
-                locationQueue.enqueue(busId, location, "RUNNING")
+                // 연결이 끊겨있으면 큐에 저장 (전달받은 status를 그대로 저장)
+                locationQueue.enqueue(busId, location, status)
                 Log.d(
                     TAG,
-                    "위치를 큐에 저장: busId=$busId, 큐 크기=${locationQueue.size()}",
+                    "위치를 큐에 저장: busId=$busId, status=$status, 큐 크기=${locationQueue.size()}",
                 )
 
                 // 네트워크가 연결되어 있으면 재연결 시도
