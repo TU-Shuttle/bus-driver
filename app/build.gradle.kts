@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -23,8 +25,56 @@ if (envFile.exists()) {
     }
 }
 
-fun getEnv(key: String): String {
-    return envVars[key] ?: System.getenv(key) ?: ""
+fun getEnv(key: String, defaultValue: String = ""): String {
+    return envVars[key] ?: System.getenv(key) ?: defaultValue
+}
+
+fun extractDomainFromUrl(url: String): String? {
+    return try {
+        val uri = URI(url)
+        uri.host
+    } catch (_: Exception) {
+        null
+    }
+}
+
+// network_security_config.xml 생성
+fun generateNetworkSecurityConfig(): String {
+    val baseUrl = getEnv("BASE_URL", "http://192.168.1.229:8080")
+    val wsUrl = getEnv("WS_URL", "ws://192.168.1.229:8080/ws")
+
+    val baseDomain = extractDomainFromUrl(baseUrl)
+    val wsDomain = extractDomainFromUrl(wsUrl)
+
+    val domains = mutableSetOf<String>()
+
+    // 에뮬레이터용
+    domains.add("10.0.2.2")
+
+    // .env에서 읽은 도메인 추가
+    baseDomain?.let { domains.add(it) }
+    wsDomain?.let { domains.add(it) }
+
+    // 기본 개발 도메인 (에러 방지)
+    if (domains.isEmpty()) {
+        domains.add("192.168.1.229") // 임시 개발용
+    }
+
+    val isHttps = baseUrl.startsWith("https://") || wsUrl.startsWith("wss://")
+    val cleartextPermitted = !isHttps
+
+    val domainConfigs = domains.joinToString("\n        ") { domain ->
+        "<domain includeSubdomains=\"true\">$domain</domain>"
+    }
+
+    return """<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- .env에서 자동 생성됨 -->
+    <domain-config cleartextTrafficPermitted="$cleartextPermitted">
+        $domainConfigs
+    </domain-config>
+</network-security-config>
+"""
 }
 
 android {
@@ -45,8 +95,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL", "http://192.168.1.229:8080")}\"")
+            buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL", "ws://192.168.1.229:8080/ws")}\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL", "https://myhomeservertest.ddns.net")}\"")
+            buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL", "wss://myhomeservertest.ddns.net/ws")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -59,6 +115,21 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    // network_security_config.xml 자동 생성
+    val networkSecurityConfigFile = file("src/main/res/xml/network_security_config.xml")
+    tasks.register("generateNetworkSecurityConfig") {
+        doLast {
+            networkSecurityConfigFile.parentFile.mkdirs()
+            networkSecurityConfigFile.writeText(generateNetworkSecurityConfig())
+        }
+    }
+
+    // 빌드 전에 network_security_config.xml 생성
+    tasks.named("preBuild").configure {
+        dependsOn("generateNetworkSecurityConfig")
     }
 }
 
