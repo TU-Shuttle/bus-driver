@@ -4,7 +4,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.tukorea.driver.R
 import com.tukorea.driver.ui.navigation.Screen
 import com.tukorea.driver.ui.theme.BusTheme
 import com.tukorea.driver.ui.theme.Gray400
@@ -19,10 +21,8 @@ fun BottomNavigationBar(
 ) {
     val navItems =
         listOf(
-            BottomNavItem(Screen.Home.route, Icons.Default.Home, "홈"),
-            BottomNavItem(Screen.Calendar.route, Icons.Default.DateRange, "예약"),
-            BottomNavItem(Screen.QuickRide.route, Icons.Default.LocalFireDepartment, "바로탑승"),
-            BottomNavItem(Screen.Settings.route, Icons.Default.Settings, "설정"),
+            BottomNavItem(Screen.Home.route, Icons.Default.Home, stringResource(R.string.driver_nav_home)),
+            BottomNavItem(Screen.Map.route, Icons.Default.Map, stringResource(R.string.driver_nav_map)),
         )
 
     NavigationBar(
