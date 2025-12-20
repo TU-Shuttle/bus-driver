@@ -176,4 +176,49 @@
     <!-- 네비게이션 -->
     <string name="driver_nav_home">홈</string>
     <string name="driver_nav_map">지도</string>
+
+    <!-- 인증 (로그인/회원가입) -->
+    <string name="auth_welcome_back">Welcome Back</string>
+    <string name="auth_login_title">로그인</string>
+    <string name="auth_login_subtitle">셔틀버스 기사 앱에 오신 것을 환영합니다</string>
+    <string name="auth_create_account">Create Account</string>
+    <string name="auth_sign_up_title">회원가입</string>
+    <string name="auth_sign_up_subtitle">새로운 계정을 만들어 시작하세요</string>
+
+    <!-- 입력 필드 라벨 -->
+    <string name="auth_name_label">이름</string>
+    <string name="auth_vehicle_number_label">차량 번호</string>
+    <string name="auth_password_label">비밀번호</string>
+    <string name="auth_confirm_password_label">비밀번호 확인</string>
+
+    <!-- 입력 필드 플레이스홀더 -->
+    <string name="auth_name_placeholder">이름을 입력하세요</string>
+    <string name="auth_vehicle_number_placeholder">차량 번호를 입력하세요 (예: 12가3456)</string>
+    <string name="auth_password_placeholder">비밀번호를 입력하세요</string>
+    <string name="auth_confirm_password_placeholder">비밀번호를 다시 입력하세요</string>
+
+    <!-- 버튼 -->
+    <string name="auth_login_button">로그인</string>
+    <string name="auth_sign_up_button">회원가입</string>
+
+    <!-- 링크 -->
+    <string name="auth_no_account">계정이 없으신가요?</string>
+    <string name="auth_sign_up_link">회원가입</string>
+    <string name="auth_already_have_account">이미 계정이 있으신가요?</string>
+    <string name="auth_login_link">로그인</string>
+
+    <!-- 비밀번호 표시/숨기기 -->
+    <string name="auth_password_show">비밀번호 표시</string>
+    <string name="auth_password_hide">비밀번호 숨기기</string>
+
+    <!-- 비밀번호 강도 -->
+    <string name="auth_password_strength_weak">약함</string>
+    <string name="auth_password_strength_medium">보통</string>
+    <string name="auth_password_strength_strong">강함</string>
+
+    <!-- 관리자 문의 -->
+    <string name="auth_contact_admin">관리자한테 문의해주세요.</string>
+
+    <!-- 기타 -->
+    <string name="auth_or">또는</string>
 </resources>
