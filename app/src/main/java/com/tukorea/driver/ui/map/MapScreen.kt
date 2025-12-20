@@ -6,13 +6,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -25,8 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -42,11 +34,10 @@ import com.naver.maps.map.LocationTrackingMode
 import com.naver.maps.map.MapView
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.util.FusedLocationSource
-import com.tukorea.driver.R
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.util.LocationUtils
 
-private const val CAMERA_ANIMATION_DURATION_MS = 500
+private const val CAMERA_ANIMATION_DURATION_MS = 500L
 private const val NAVIGATION_BAR_PADDING_DP = 80
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -105,23 +96,6 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = MaterialTheme.colorScheme.primary,
-            )
-        }
-
-        // 현재 위치 버튼
-        FloatingActionButton(
-            onClick = { viewModel.loadCurrentLocation() },
-            modifier =
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-        ) {
-            Icon(
-                imageVector = Icons.Default.MyLocation,
-                contentDescription = stringResource(id = R.string.map_my_location_cd),
             )
         }
     }
@@ -251,7 +225,7 @@ fun NaverMapView(
 
                     // UI 설정
                     map.uiSettings.apply {
-                        isLocationButtonEnabled = false // Compose FAB 사용
+                        isLocationButtonEnabled = true // 네이버 맵 SDK 기본 위치 버튼
                         isZoomControlEnabled = true
                     }
 
