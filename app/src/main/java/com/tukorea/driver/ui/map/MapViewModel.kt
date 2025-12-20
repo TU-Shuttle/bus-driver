@@ -3,12 +3,20 @@ package com.tukorea.driver.ui.map
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tukorea.driver.domain.usecase.ConnectWebSocketUseCase
+import com.tukorea.driver.domain.usecase.DisconnectWebSocketUseCase
 import com.tukorea.driver.domain.usecase.GetCurrentLocationUseCase
+import com.tukorea.driver.domain.usecase.GetLocationUpdatesUseCase
 import com.tukorea.driver.domain.util.Result
+import com.tukorea.driver.domain.usecase.ObserveWebSocketConnectionStateUseCase
+import com.tukorea.driver.domain.usecase.SendLocationUseCase
 import com.tukorea.driver.ui.common.ErrorMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +32,11 @@ class MapViewModel
     @Inject
     constructor(
         private val getCurrentLocationUseCase: GetCurrentLocationUseCase,
+        private val getLocationUpdatesUseCase: GetLocationUpdatesUseCase,
+        private val sendLocationUseCase: SendLocationUseCase,
+        private val connectWebSocketUseCase: ConnectWebSocketUseCase,
+        private val disconnectWebSocketUseCase: DisconnectWebSocketUseCase,
+        private val observeWebSocketConnectionStateUseCase: ObserveWebSocketConnectionStateUseCase,
         private val errorMapper: ErrorMapper,
     ) : ViewModel() {
         private val _state = MutableStateFlow(MapUiState())
@@ -31,11 +44,22 @@ class MapViewModel
 
         private companion object {
             private const val TAG = "MapViewModel"
+            // TODO: 실제 버스/드라이버 ID로 변경 필요
+            private const val BUS_ID = "bus-001"
         }
 
         init {
             Log.d(TAG, "초기화: 위치 권한을 확인합니다.")
             checkLocationPermission()
+            connectWebSocket()
+            observeWebSocketState()
+            startLocationUpdates()
+        }
+
+        override fun onCleared() {
+            super.onCleared()
+            Log.d(TAG, "ViewModel 종료: WebSocket 연결 종료")
+            disconnectWebSocketUseCase()
         }
 
         /**
@@ -91,6 +115,64 @@ class MapViewModel
         fun onLocationPermissionGranted() {
             Log.d(TAG, "위치 권한이 허용되었습니다.")
             _state.value = _state.value.copy(isLocationPermissionGranted = true)
-            loadCurrentLocation()
+            startLocationUpdates()
+        }
+
+        /**
+         * WebSocket 연결을 시작합니다.
+         */
+        private fun connectWebSocket() {
+            Log.d(TAG, "WebSocket 연결 시작")
+            connectWebSocketUseCase()
+        }
+
+        /**
+         * WebSocket 연결 상태를 관찰하고 UI 상태를 업데이트합니다.
+         */
+        private fun observeWebSocketState() {
+            observeWebSocketConnectionStateUseCase()
+                .onEach { connectionState ->
+                    Log.d(TAG, "WebSocket 연결 상태 변경: $connectionState")
+                    _state.value = _state.value.copy(webSocketConnectionState = connectionState)
+                }
+                .launchIn(viewModelScope)
+        }
+
+        /**
+         * 백그라운드에서 지속적으로 위치 업데이트를 받아옵니다.
+         * 위치 권한이 허용된 경우에만 동작합니다.
+         * 위치 업데이트 시 자동으로 서버로 전송합니다.
+         */
+        private fun startLocationUpdates() {
+            if (!getCurrentLocationUseCase.isLocationPermissionGranted()) {
+                Log.d(TAG, "위치 권한이 없어 위치 업데이트를 시작할 수 없습니다.")
+                return
+            }
+
+            Log.d(TAG, "백그라운드 위치 업데이트 시작")
+            getLocationUpdatesUseCase()
+                .onEach { location ->
+                    Log.d(
+                        TAG,
+                        "위치 업데이트 수신: 위도=${location.latitude}, 경도=${location.longitude}",
+                    )
+                    _state.value =
+                        _state.value.copy(
+                            currentLocation = location,
+                            isLoading = false,
+                            error = null,
+                        )
+
+                    // 위치 업데이트를 서버로 전송
+                    sendLocationUseCase(BUS_ID, location)
+                }
+                .catch { exception ->
+                    Log.e(TAG, "위치 업데이트 중 오류 발생", exception)
+                    val message = errorMapper.run {
+                        exception.toUserMessage()
+                    }
+                    _state.value = _state.value.copy(error = message)
+                }
+                .launchIn(viewModelScope)
         }
     }

@@ -1,8 +1,8 @@
 package com.tukorea.driver.domain.usecase
 
+import com.tukorea.driver.domain.util.MapResult
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.repository.MapRepository
-import com.tukorea.driver.domain.util.MapResult
 import javax.inject.Inject
 
 class GetCurrentLocationUseCase

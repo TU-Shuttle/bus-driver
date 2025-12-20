@@ -1,10 +1,18 @@
 package com.tukorea.driver.di
 
 import android.content.Context
+import com.tukorea.driver.data.api.ApiService
 import com.tukorea.driver.data.location.LocationDataSource
 import com.tukorea.driver.data.repository.MapRepositoryImpl
+import com.tukorea.driver.data.websocket.WebSocketDataSource
 import com.tukorea.driver.domain.repository.MapRepository
+import com.tukorea.driver.domain.usecase.ConnectWebSocketUseCase
+import com.tukorea.driver.domain.usecase.DisconnectWebSocketUseCase
+import com.tukorea.driver.domain.usecase.GetBusLocationFromServerUseCase
 import com.tukorea.driver.domain.usecase.GetCurrentLocationUseCase
+import com.tukorea.driver.domain.usecase.GetLocationUpdatesUseCase
+import com.tukorea.driver.domain.usecase.ObserveWebSocketConnectionStateUseCase
+import com.tukorea.driver.domain.usecase.SendLocationUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,11 +31,45 @@ object MapModule {
 
     @Provides
     @Singleton
-    fun provideMapRepository(locationDataSource: LocationDataSource): MapRepository =
-        MapRepositoryImpl(locationDataSource)
+    fun provideMapRepository(
+        locationDataSource: LocationDataSource,
+        webSocketDataSource: WebSocketDataSource,
+        apiService: ApiService,
+    ): MapRepository =
+        MapRepositoryImpl(locationDataSource, webSocketDataSource, apiService)
 
     @Provides
     @Singleton
     fun provideGetCurrentLocationUseCase(repository: MapRepository): GetCurrentLocationUseCase =
         GetCurrentLocationUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetLocationUpdatesUseCase(repository: MapRepository): GetLocationUpdatesUseCase =
+        GetLocationUpdatesUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideSendLocationUseCase(repository: MapRepository): SendLocationUseCase =
+        SendLocationUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideConnectWebSocketUseCase(repository: MapRepository): ConnectWebSocketUseCase =
+        ConnectWebSocketUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideDisconnectWebSocketUseCase(repository: MapRepository): DisconnectWebSocketUseCase =
+        DisconnectWebSocketUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideObserveWebSocketConnectionStateUseCase(repository: MapRepository): ObserveWebSocketConnectionStateUseCase =
+        ObserveWebSocketConnectionStateUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetBusLocationFromServerUseCase(repository: MapRepository): GetBusLocationFromServerUseCase =
+        GetBusLocationFromServerUseCase(repository)
 }
