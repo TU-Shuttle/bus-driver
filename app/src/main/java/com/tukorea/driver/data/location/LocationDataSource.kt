@@ -178,7 +178,6 @@ class LocationDataSource
         }
 
         companion object {
-            // logcat 필터링 태그
             private const val TAG = "LocationDataSource"
         }
     }

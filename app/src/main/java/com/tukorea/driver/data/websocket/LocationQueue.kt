@@ -33,19 +33,10 @@ class LocationQueue {
         return items
     }
 
-    /**
-     * 큐의 크기를 반환합니다.
-     */
     fun size(): Int = queue.size
 
-    /**
-     * 큐가 비어있는지 확인합니다.
-     */
     fun isEmpty(): Boolean = queue.isEmpty()
 
-    /**
-     * 큐를 비웁니다.
-     */
     fun clear() {
         queue.clear()
     }

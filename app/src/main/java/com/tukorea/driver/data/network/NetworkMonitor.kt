@@ -15,7 +15,6 @@ import javax.inject.Singleton
 
 /**
  * 네트워크 연결 상태를 모니터링하는 클래스.
- * 실무에서 네트워크 상태에 따라 WebSocket 재연결 등을 처리하기 위해 사용됩니다.
  */
 @Singleton
 class NetworkMonitor
