@@ -127,7 +127,7 @@ fun NaverMapView(
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
 
     // 마지막 업데이트 위치 (중복 업데이트 방지)
-    var lastUpdatedLocation by rememberSaveable { mutableStateOf<MapLocation?>(null) }
+    var lastUpdatedLocation by remember { mutableStateOf<MapLocation?>(null) }
 
     // 맵이 준비되었는지 여부
     var isMapReady by remember { mutableStateOf(false) }
