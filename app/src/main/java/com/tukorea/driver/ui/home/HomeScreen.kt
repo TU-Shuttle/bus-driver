@@ -207,11 +207,14 @@ private fun RidersRow(departure: DepartureRiders) {
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
+            // 하차지가 하나면 오른쪽 인원과 겹치므로 "본교 하차"만 쓴다.
+            val single = departure.dropOffs.keys.singleOrNull()
             val dropOffs = departure.dropOffs.entries.sortedByDescending { it.value }.map { (stop, count) ->
                 stringResource(R.string.driver_drop_off_count, stringResource(stop.nameRes()), count)
             }
+            val singleLabel = single?.let { stringResource(R.string.driver_drop_off_only, stringResource(it.nameRes())) }
             Text(
-                text = dropOffs.joinToString(" · "),
+                text = singleLabel ?: dropOffs.joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
                 color = bus.textSecondary,
             )
@@ -293,7 +296,7 @@ fun DriverStatusPanel(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             StatusTitle(title = title, dotColor = dotColor, pulsing = status == DrivingStatus.Running)
             Text(
                 text = message,
@@ -302,37 +305,42 @@ fun DriverStatusPanel(
             )
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            when (status) {
-                DrivingStatus.Stop ->
+        // 운행 중/대기 중엔 두 버튼을 나란히 둬서 시트가 길어지지 않게 한다.
+        when (status) {
+            DrivingStatus.Stop ->
+                BusButton(
+                    text = stringResource(R.string.driver_driving_button_start),
+                    onClick = onStart,
+                )
+            DrivingStatus.Running ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     BusButton(
-                        text = stringResource(R.string.driver_driving_button_start),
-                        onClick = onStart,
-                    )
-                DrivingStatus.Running -> {
-                    BusButton(
+                        modifier = Modifier.weight(1f),
                         text = stringResource(R.string.driver_driving_button_waiting),
                         onClick = onWait,
                         style = BusButtonStyle.Secondary,
                     )
                     BusButton(
+                        modifier = Modifier.weight(1f),
                         text = stringResource(R.string.driver_driving_button_stop),
                         onClick = onStop,
                         style = BusButtonStyle.Danger,
                     )
                 }
-                DrivingStatus.Waiting -> {
+            DrivingStatus.Waiting ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     BusButton(
+                        modifier = Modifier.weight(1f),
                         text = stringResource(R.string.driver_driving_button_start),
                         onClick = onStart,
                     )
                     BusButton(
+                        modifier = Modifier.weight(1f),
                         text = stringResource(R.string.driver_driving_button_stop),
                         onClick = onStop,
                         style = BusButtonStyle.Danger,
                     )
                 }
-            }
         }
     }
 }

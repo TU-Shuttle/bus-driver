@@ -5,6 +5,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.sp
 import com.tukorea.driver.R
 
@@ -36,6 +38,14 @@ private fun style(size: Int, line: Int, weight: FontWeight, tracking: Float = 0f
     lineHeight = line.sp,
     letterSpacing = tracking.sp,
     fontFeatureSettings = TABULAR_NUMBERS,
+    // 한국어 전용 앱이라 기기 언어와 상관없이 한국어 규칙(어절 단위 줄바꿈)을 쓴다.
+    localeList = LocaleList("ko-KR"),
+    // 한글이 단어 중간에서 끊기지 않게 어절 단위로 줄바꿈한다(API 33+, 그 아래에선 무시됨).
+    lineBreak = LineBreak(
+        strategy = LineBreak.Strategy.HighQuality,
+        strictness = LineBreak.Strictness.Strict,
+        wordBreak = LineBreak.WordBreak.Phrase,
+    ),
 )
 
 val AppTypography = Typography(

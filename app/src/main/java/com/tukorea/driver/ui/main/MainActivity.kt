@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +36,9 @@ class MainActivity : ComponentActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
 
+                    // 지도는 상태표시줄 아래까지 그린다(학생 앱과 같게).
                     Scaffold(
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
                         bottomBar = {
                             BottomNavigationBar(
                                 currentRoute = currentRoute,

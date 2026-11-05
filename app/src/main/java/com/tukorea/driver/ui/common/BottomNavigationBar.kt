@@ -1,7 +1,11 @@
 package com.tukorea.driver.ui.common
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -20,8 +24,8 @@ fun BottomNavigationBar(
 ) {
     val navItems =
         listOf(
-            BottomNavItem(Screen.Home.route, Icons.Default.Home, stringResource(R.string.driver_nav_home)),
-            BottomNavItem(Screen.Map.route, Icons.Default.Map, stringResource(R.string.driver_nav_map)),
+            BottomNavItem(Screen.Home.route, Icons.Outlined.Home, Icons.Filled.Home, stringResource(R.string.driver_nav_home)),
+            BottomNavItem(Screen.Map.route, Icons.Outlined.Map, Icons.Filled.Map, stringResource(R.string.driver_nav_map)),
         )
 
     NavigationBar(
@@ -32,11 +36,16 @@ fun BottomNavigationBar(
             NavigationBarItem(
                 icon = {
                     Icon(
-                        imageVector = item.icon,
+                        imageVector = if (currentRoute == item.route) item.selectedIcon else item.icon,
                         contentDescription = item.label,
                     )
                 },
-                label = { Text(item.label) },
+                label = {
+                    Text(
+                        text = item.label,
+                        fontWeight = if (currentRoute == item.route) FontWeight.Bold else FontWeight.Medium,
+                    )
+                },
                 selected = currentRoute == item.route,
                 onClick = {
                     if (item.route == Screen.Home.route && currentRoute == Screen.Home.route) {
@@ -47,8 +56,8 @@ fun BottomNavigationBar(
                 },
                 colors =
                     NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
                         indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                         unselectedIconColor = MaterialTheme.busColors.textTertiary,
                         unselectedTextColor = MaterialTheme.busColors.textTertiary,
