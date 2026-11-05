@@ -1,7 +1,6 @@
 package com.tukorea.driver.ui.home
 
 import android.Manifest
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MyLocation
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,9 +41,7 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.naver.maps.map.LocationTrackingMode
 import com.naver.maps.map.NaverMap
 import com.tukorea.driver.R
-import com.tukorea.driver.domain.model.DepartureRiders
 import com.tukorea.driver.domain.model.DrivingStatus
-import com.tukorea.driver.domain.model.ShuttleStop
 import com.tukorea.driver.domain.model.WebSocketConnectionState
 import com.tukorea.driver.ui.common.BusButton
 import com.tukorea.driver.ui.common.BusButtonStyle
@@ -60,7 +55,7 @@ private val Inset = 24.dp
 
 /**
  * 기사 앱의 유일한 화면. 전체 지도 위에 고정 시트를 두고,
- * 운행 상태·위치 전송 상태·다음 출발편 탑승 예정을 한눈에 보여준다.
+ * 운행 상태와 위치 전송 상태를 한눈에 보여준다.
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -115,7 +110,6 @@ fun DriverHomeRoute(
                 .onSizeChanged { sheetHeight = with(density) { it.height.toDp() } },
             status = uiState.drivingStatus,
             connection = mapState.webSocketConnectionState,
-            riders = uiState.upcomingRiders,
             onStart = viewModel::startDriving,
             onWait = viewModel::startWaiting,
             onStop = viewModel::stopDriving,
@@ -127,7 +121,6 @@ fun DriverHomeRoute(
 fun DriverSheet(
     status: DrivingStatus,
     connection: WebSocketConnectionState,
-    riders: List<DepartureRiders>?,
     onStart: () -> Unit,
     onWait: () -> Unit,
     onStop: () -> Unit,
@@ -145,12 +138,6 @@ fun DriverSheet(
                 .padding(start = Inset, end = Inset, top = 24.dp, bottom = 16.dp),
         ) {
             DriverStatusPanel(status = status, connection = connection, onStart = onStart, onWait = onWait, onStop = onStop)
-            HorizontalDivider(
-                modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-            UpcomingRidersPanel(riders = riders)
         }
     }
 }
@@ -252,83 +239,6 @@ private fun ConnectionLine(connection: WebSocketConnectionState) {
     }
 }
 
-/** 학생들이 '이 셔틀 탈게요'로 남긴 다음 출발편 인원과 하차지. */
-@Composable
-fun UpcomingRidersPanel(riders: List<DepartureRiders>?, modifier: Modifier = Modifier) {
-    val bus = MaterialTheme.busColors
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.driver_riders_title),
-            style = MaterialTheme.typography.titleSmall,
-            color = bus.textSecondary,
-        )
-        when {
-            riders == null -> EmptyLine(R.string.driver_riders_unavailable)
-            riders.isEmpty() -> EmptyLine(R.string.driver_riders_empty)
-            else -> riders.forEachIndexed { index, departure ->
-                if (index > 0) HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                RidersRow(departure)
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyLine(@StringRes textRes: Int) {
-    Text(
-        modifier = Modifier.padding(vertical = 12.dp),
-        text = stringResource(textRes),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.busColors.textSecondary,
-    )
-}
-
-@Composable
-private fun RidersRow(departure: DepartureRiders) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row {
-                Text(
-                    modifier = Modifier.alignByBaseline(),
-                    text = "%02d:%02d".format(departure.departMinute / 60, departure.departMinute % 60),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    modifier = Modifier.alignByBaseline(),
-                    text = stringResource(
-                        R.string.driver_direction,
-                        stringResource(departure.direction.origin.nameRes()),
-                        stringResource(departure.direction.destination.nameRes()),
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            // 하차지가 하나면 오른쪽 인원과 겹치므로 "본교 하차"만 쓴다.
-            val single = departure.dropOffs.keys.singleOrNull()
-            val breakdown = departure.dropOffs.entries.sortedByDescending { it.value }.map { (stop, count) ->
-                stringResource(R.string.driver_drop_off_count, stringResource(stop.nameRes()), count)
-            }
-            val singleLabel = single?.let { stringResource(R.string.driver_drop_off_only, stringResource(it.nameRes())) }
-            Text(
-                text = singleLabel ?: breakdown.joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.busColors.textSecondary,
-            )
-        }
-        Text(
-            text = stringResource(R.string.driver_riders_count, departure.riders),
-            style = MaterialTheme.typography.headlineSmall,
-        )
-    }
-}
-
 @Composable
 private fun LocateMeButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
@@ -349,14 +259,6 @@ private fun LocateMeButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-@StringRes
-private fun ShuttleStop.nameRes(): Int = when (this) {
-    ShuttleStop.JEONGWANG_STATION -> R.string.driver_stop_station
-    ShuttleStop.CAMPUS1 -> R.string.driver_stop_campus1
-    ShuttleStop.CAMPUS1_WEST_GATE -> R.string.driver_stop_west_gate
-    ShuttleStop.CAMPUS2 -> R.string.driver_stop_campus2
-}
-
 @Preview(showBackground = true, name = "운행 중")
 @Composable
 private fun DriverSheetRunningPreview() {
@@ -365,7 +267,6 @@ private fun DriverSheetRunningPreview() {
             DriverSheet(
                 status = DrivingStatus.Running,
                 connection = WebSocketConnectionState.Connected,
-                riders = emptyList(),
                 onStart = {},
                 onWait = {},
                 onStop = {},

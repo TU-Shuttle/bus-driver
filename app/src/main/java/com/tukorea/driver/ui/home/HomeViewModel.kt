@@ -1,12 +1,5 @@
 package com.tukorea.driver.ui.home
 
-import com.tukorea.driver.domain.usecase.GetUpcomingRidersUseCase
-import com.tukorea.driver.domain.util.Result
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import java.util.Calendar
-import java.util.TimeZone
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,7 +24,6 @@ class HomeViewModel
 constructor(
     private val getDrivingStatusUseCase: GetDrivingStatusUseCase,
     private val locationServiceManager: LocationServiceManager,
-    private val getUpcomingRiders: GetUpcomingRidersUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -55,26 +47,9 @@ constructor(
             }
             .launchIn(viewModelScope)
 
-        // 학생들이 남긴 탑승 예정 인원을 주기적으로 갱신한다.
-        viewModelScope.launch {
-            while (true) {
-                val result = getUpcomingRiders(nowMinuteInSeoul())
-                _uiState.update {
-                    it.copy(upcomingRiders = (result as? Result.Success)?.data ?: it.upcomingRiders)
-                }
-                delay(RIDERS_REFRESH_MS)
-            }
-        }
     }
 
-    private fun nowMinuteInSeoul(): Int {
-        val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
-        return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
-    }
 
-    private companion object {
-        const val RIDERS_REFRESH_MS = 30_000L
-    }
 
 
     /**
