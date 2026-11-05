@@ -34,7 +34,7 @@ private val LightColorScheme =
         onError = White,
         errorContainer = Red50,
         onErrorContainer = Red500,
-        background = Gray100,
+        background = White,
         onBackground = Gray900,
         surface = White,
         onSurface = Gray900,
@@ -49,7 +49,7 @@ private val DarkColorScheme =
     darkColorScheme(
         primary = White,
         onPrimary = Black,
-        primaryContainer = DarkSurfaceHigh,
+        primaryContainer = DarkOutline,
         onPrimaryContainer = White,
         secondary = Gray400,
         onSecondary = Gray900,
@@ -65,9 +65,9 @@ private val DarkColorScheme =
         onBackground = Gray100,
         surface = DarkSurface,
         onSurface = Gray100,
-        surfaceVariant = DarkSurfaceHigh,
+        surfaceVariant = DarkOutline,
         onSurfaceVariant = Gray400,
-        outline = DarkOutline,
+        outline = Gray700,
         outlineVariant = DarkSurfaceHigh,
         scrim = Black.copy(alpha = 0.6f),
     )
@@ -83,6 +83,8 @@ data class BusColors(
     val dangerContainer: Color,
     val textSecondary: Color,
     val textTertiary: Color,
+    /** 세그먼트 컨트롤에서 선택된 칸(트랙보다 밝아야 한다). */
+    val segmentThumb: Color,
 )
 
 private val LightBusColors =
@@ -95,6 +97,7 @@ private val LightBusColors =
         dangerContainer = Red50,
         textSecondary = Gray600,
         textTertiary = Gray500,
+        segmentThumb = White,
     )
 
 private val DarkBusColors =
@@ -107,6 +110,7 @@ private val DarkBusColors =
         dangerContainer = DarkRed50,
         textSecondary = Gray400,
         textTertiary = Gray500,
+        segmentThumb = Gray700,
     )
 
 private val LocalBusColors = staticCompositionLocalOf { LightBusColors }
@@ -118,10 +122,10 @@ val MaterialTheme.busColors: BusColors
 
 private val BusShapes =
     Shapes(
-        extraSmall = RoundedCornerShape(6.dp),
-        small = RoundedCornerShape(8.dp),
+        extraSmall = RoundedCornerShape(12.dp),
+        small = RoundedCornerShape(12.dp),
         medium = RoundedCornerShape(12.dp),
-        large = RoundedCornerShape(16.dp),
+        large = RoundedCornerShape(24.dp),
         extraLarge = RoundedCornerShape(24.dp),
     )
 

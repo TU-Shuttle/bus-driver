@@ -2,6 +2,9 @@ package com.tukorea.driver.ui.home
 
 import android.Manifest
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,8 +70,9 @@ fun HomeScreen(
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val density = LocalDensity.current
 
-    // 모달 높이
-    val fixedHeight = screenHeight * 0.35f
+    // 지도 아래 여백 = 시트 기본(MID) 높이
+    val fixedHeight = screenHeight * 0.40f
+    var naverMap by remember { mutableStateOf<com.naver.maps.map.NaverMap?>(null) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -93,9 +97,18 @@ fun HomeScreen(
                     bottomPadding = with(density) {
                         (fixedHeight.toPx()).toInt()
                     },
-                    onMapInitialized = { _ ->
-                    },
+                    onMapInitialized = { map -> naverMap = map },
                 )
+                if (locationPermissionsState.allPermissionsGranted) {
+                    LocateMeButton(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 16.dp, bottom = fixedHeight + 16.dp),
+                        onClick = {
+                            naverMap?.locationTrackingMode = com.naver.maps.map.LocationTrackingMode.Follow
+                        },
+                    )
+                }
             }
 
             BottomModal(
@@ -136,24 +149,32 @@ fun UpcomingRidersPanel(
     modifier: Modifier = Modifier,
 ) {
     val bus = MaterialTheme.busColors
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Text(
+            modifier = Modifier.padding(bottom = 4.dp),
             text = stringResource(R.string.driver_riders_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleSmall,
+            color = bus.textSecondary,
         )
         when {
             riders == null -> Text(
+                modifier = Modifier.padding(vertical = 12.dp),
                 text = stringResource(R.string.driver_riders_unavailable),
                 style = MaterialTheme.typography.bodyMedium,
                 color = bus.textSecondary,
             )
             riders.isEmpty() -> Text(
+                modifier = Modifier.padding(vertical = 12.dp),
                 text = stringResource(R.string.driver_riders_empty),
                 style = MaterialTheme.typography.bodyMedium,
                 color = bus.textSecondary,
             )
-            else -> riders.forEach { departure -> RidersRow(departure) }
+            else -> riders.forEachIndexed { index, departure ->
+                if (index > 0) {
+                    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                }
+                RidersRow(departure)
+            }
         }
     }
 }
@@ -161,39 +182,63 @@ fun UpcomingRidersPanel(
 @Composable
 private fun RidersRow(departure: DepartureRiders) {
     val bus = MaterialTheme.busColors
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row {
                 Text(
-                    text = "%02d:%02d".format(departure.departMinute / 60, departure.departMinute % 60) +
-                        "  " + stringResource(
-                            R.string.driver_direction,
-                            stringResource(departure.direction.origin.nameRes()),
-                            stringResource(departure.direction.destination.nameRes()),
-                        ),
-                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.alignByBaseline(),
+                    text = "%02d:%02d".format(departure.departMinute / 60, departure.departMinute % 60),
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
-                val dropOffs = departure.dropOffs.entries.sortedByDescending { it.value }.map { (stop, count) ->
-                    stringResource(R.string.driver_drop_off_count, stringResource(stop.nameRes()), count)
-                }
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = dropOffs.joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = bus.textSecondary,
+                    modifier = Modifier.alignByBaseline(),
+                    text = stringResource(
+                        R.string.driver_direction,
+                        stringResource(departure.direction.origin.nameRes()),
+                        stringResource(departure.direction.destination.nameRes()),
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
+            val dropOffs = departure.dropOffs.entries.sortedByDescending { it.value }.map { (stop, count) ->
+                stringResource(R.string.driver_drop_off_count, stringResource(stop.nameRes()), count)
+            }
             Text(
-                text = stringResource(R.string.driver_riders_count, departure.riders),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
+                text = dropOffs.joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium,
+                color = bus.textSecondary,
+            )
+        }
+        Text(
+            text = stringResource(R.string.driver_riders_count, departure.riders),
+            style = MaterialTheme.typography.headlineSmall,
+        )
+    }
+}
+
+/** 지도 위 둥근 내 위치 버튼(기본 SDK 버튼 대신). */
+@Composable
+private fun LocateMeButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.size(48.dp),
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Outlined.MyLocation,
+                contentDescription = stringResource(R.string.driver_locate_me),
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp),
             )
         }
     }

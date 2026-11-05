@@ -21,158 +21,37 @@ val PretendardFontFamily =
         Font(R.font.pretendard_extrabold, FontWeight.ExtraBold),
     )
 
-// Display
-val DisplayLarge =
-    TextStyle( // 도착 시간, 카운트다운
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 48.sp,
-        lineHeight = 56.sp,
-        letterSpacing = (-0.25).sp,
-    )
+/*
+ * 타이포그래피 규칙
+ * - 한글은 자간이 넓으면 엉성해 보여서 자간은 0 이하로 둔다(헤드라인 -0.2, 디스플레이 -1).
+ * - 시각이 흔들리지 않도록 모든 스타일에 고정폭 숫자(tnum)를 쓴다.
+ * - 굵기는 스타일에 들어 있다. 화면에서 fontSize 를 직접 주지 않는다.
+ */
+private const val TABULAR_NUMBERS = "tnum"
 
-val DisplayMedium =
-    TextStyle( // 주요 정보 헤더
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-    )
+private fun style(size: Int, line: Int, weight: FontWeight, tracking: Float = 0f) = TextStyle(
+    fontFamily = PretendardFontFamily,
+    fontWeight = weight,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = tracking.sp,
+    fontFeatureSettings = TABULAR_NUMBERS,
+)
 
-val DisplaySmall =
-    TextStyle( // 섹션 타이틀
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-    )
-
-// Headline
-val HeadlineLarge =
-    TextStyle( // 화면 타이틀
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        lineHeight = 32.sp,
-    )
-
-val HeadlineMedium =
-    TextStyle( // 카드 헤더
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        lineHeight = 28.sp,
-    )
-
-val HeadlineSmall =
-    TextStyle( // 리스트 섹션 헤더
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 26.sp,
-    )
-
-// Title
-val TitleLarge =
-    TextStyle( // 다이얼로그 제목
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 18.sp,
-        lineHeight = 26.sp,
-    )
-
-val TitleMedium =
-    TextStyle( // 리스트 아이템 제목
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.15.sp,
-    )
-
-val TitleSmall =
-    TextStyle( // 버튼, 탭 라벨
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
-    )
-
-// Body
-val BodyLarge =
-    TextStyle( // 주요 본문
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
-    )
-
-val BodyMedium =
-    TextStyle( // 일반 본문
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.25.sp,
-    )
-
-val BodySmall =
-    TextStyle( // 보조 텍스트, 캡션
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.4.sp,
-    )
-
-// Label
-val LabelLarge =
-    TextStyle( // 버튼, 탭
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
-    )
-
-val LabelMedium =
-    TextStyle( // 칩, 태그
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
-    )
-
-val LabelSmall =
-    TextStyle( // 배지, 힌트
-        fontFamily = PretendardFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 10.sp,
-        lineHeight = 14.sp,
-        letterSpacing = 0.5.sp,
-    )
-
-//  Material 3 Typography
-val AppTypography =
-    Typography(
-        displayLarge = DisplayLarge,
-        displayMedium = DisplayMedium,
-        displaySmall = DisplaySmall,
-        headlineLarge = HeadlineLarge,
-        headlineMedium = HeadlineMedium,
-        headlineSmall = HeadlineSmall,
-        titleLarge = TitleLarge,
-        titleMedium = TitleMedium,
-        titleSmall = TitleSmall,
-        bodyLarge = BodyLarge,
-        bodyMedium = BodyMedium,
-        bodySmall = BodySmall,
-        labelLarge = LabelLarge,
-        labelMedium = LabelMedium,
-        labelSmall = LabelSmall,
-    )
-
-val Typography = AppTypography
+val AppTypography = Typography(
+    displayLarge = style(56, 60, FontWeight.ExtraBold, -1f), // 다음 셔틀 시각/남은 분
+    displayMedium = style(40, 48, FontWeight.Bold, -1f),
+    displaySmall = style(32, 40, FontWeight.Bold, -0.5f),
+    headlineLarge = style(24, 32, FontWeight.Bold, -0.2f), // 화면 제목
+    headlineMedium = style(22, 30, FontWeight.Bold, -0.2f),
+    headlineSmall = style(20, 28, FontWeight.Bold, -0.2f), // 시트 제목, 큰 시각
+    titleLarge = style(18, 26, FontWeight.Bold), // 섹션 제목
+    titleMedium = style(16, 24, FontWeight.SemiBold), // 행 제목, 버튼
+    titleSmall = style(14, 20, FontWeight.SemiBold), // 섹션 라벨
+    bodyLarge = style(16, 24, FontWeight.Normal),
+    bodyMedium = style(14, 22, FontWeight.Normal),
+    bodySmall = style(12, 18, FontWeight.Normal), // 캡션
+    labelLarge = style(14, 20, FontWeight.SemiBold), // 칩, 알약 버튼
+    labelMedium = style(12, 16, FontWeight.SemiBold),
+    labelSmall = style(11, 16, FontWeight.Medium),
+)

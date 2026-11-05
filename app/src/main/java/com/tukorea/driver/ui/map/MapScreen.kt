@@ -227,8 +227,11 @@ fun NaverMapView(
 
                     // UI 설정
                     map.uiSettings.apply {
-                        isLocationButtonEnabled = true // 네이버 맵 SDK 기본 위치 버튼
-                        isZoomControlEnabled = true
+                        // 기본 컨트롤은 숨기고(우버처럼 깔끔하게) 위치 이동은 화면의 둥근 버튼이 맡는다.
+                        isLocationButtonEnabled = false
+                        isZoomControlEnabled = false
+                        isCompassEnabled = false
+                        isScaleBarEnabled = false
                     }
 
                     // 위치 추적 모드 설정

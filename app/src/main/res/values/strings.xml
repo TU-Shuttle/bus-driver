@@ -159,7 +159,7 @@
     <!-- Driver 앱 전용 문자열 -->
     <!-- 운행 상태 -->
     <string name="driver_driving_status_title">운행 상태</string>
-    <string name="driver_driving_status_stop">운행 종료</string>
+    <string name="driver_driving_status_stop">운행 전</string>
     <string name="driver_driving_status_running">운행 중</string>
     <string name="driver_driving_status_waiting">대기 중</string>
 
@@ -181,10 +181,11 @@
     <string name="driver_riders_empty">아직 탑승 예정을 남긴 학생이 없어요.</string>
     <string name="driver_riders_unavailable">탑승 예정 인원을 불러오지 못했어요.</string>
     <string name="driver_riders_count">%1$d명</string>
-    <string name="driver_drop_off_count">%1$s %2$d</string>
+    <string name="driver_drop_off_count">%1$s %2$d명</string>
     <string name="driver_direction">%1$s → %2$s</string>
     <string name="driver_stop_station">정왕역</string>
     <string name="driver_stop_campus1">본교</string>
     <string name="driver_stop_west_gate">본교 서문</string>
     <string name="driver_stop_campus2">제2캠퍼스</string>
+    <string name="driver_locate_me">내 위치로 이동</string>
 </resources>

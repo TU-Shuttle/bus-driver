@@ -91,9 +91,9 @@ fun BottomModal(
                 .fillMaxWidth()
                 .height(finalHeight)
                 .align(Alignment.BottomCenter),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 12.dp,
+            shadowElevation = 8.dp,
         ) {
             Column(
                 modifier = Modifier

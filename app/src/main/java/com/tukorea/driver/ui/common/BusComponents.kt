@@ -68,8 +68,8 @@ fun BusButton(
                 )
             BusButtonStyle.Secondary ->
                 ButtonDefaults.buttonColors(
-                    containerColor = colorScheme.primaryContainer,
-                    contentColor = colorScheme.primary,
+                    containerColor = colorScheme.surfaceVariant,
+                    contentColor = colorScheme.onSurface,
                     disabledContainerColor = colorScheme.surfaceVariant,
                     disabledContentColor = bus.textTertiary,
                 )
@@ -98,11 +98,32 @@ fun BusButton(
         elevation = null,
         interactionSource = interactionSource,
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
+        Text(text = text, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/** 행 안의 작은 보조 버튼(36dp). 위험한 동작이 아니면 빨간색을 쓰지 않는다. */
+@Composable
+fun SmallSecondaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Surface(
+        modifier = modifier.height(36.dp),
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Box(modifier = Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.busColors.textTertiary,
+            )
+        }
     }
 }
 
