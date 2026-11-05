@@ -1,7 +1,6 @@
 package com.tukorea.driver.domain.usecase
 
 import com.tukorea.driver.domain.error.AppError
-import com.tukorea.driver.domain.repository.TempRepository
 import com.tukorea.driver.domain.util.AppResult
 import com.tukorea.driver.domain.util.Result
 import javax.inject.Inject

@@ -41,67 +41,6 @@ import com.tukorea.driver.domain.util.LocationUtils
 private const val CAMERA_ANIMATION_DURATION_MS = 500L
 private const val NAVIGATION_BAR_PADDING_DP = 80
 
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
-    val context = LocalContext.current
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    // 위치 권한 상태
-    val locationPermissionsState =
-        rememberMultiplePermissionsState(
-            permissions =
-                listOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                ),
-        )
-
-    // 권한 요청 결과 처리
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted) {
-        if (locationPermissionsState.allPermissionsGranted) {
-            viewModel.onLocationPermissionGranted()
-        }
-    }
-
-    // 권한 요청 (처음 진입 시)
-    LaunchedEffect(Unit) {
-        if (!locationPermissionsState.allPermissionsGranted) {
-            locationPermissionsState.launchMultiplePermissionRequest()
-        }
-    }
-
-    // 에러 토스트
-    LaunchedEffect(state.error) {
-        state.error?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        // 네이버 맵
-        NaverMapView(
-            modifier = Modifier.fillMaxSize(),
-            currentLocation = state.currentLocation,
-            isLocationPermissionGranted = locationPermissionsState.allPermissionsGranted,
-            onMapReady = {
-                // 맵 준비되고 권한 있으면 현재 위치 로드
-                if (locationPermissionsState.allPermissionsGranted) {
-                    viewModel.loadCurrentLocation()
-                }
-            },
-        )
-
-        // 로딩 인디케이터
-        if (state.isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
-}
-
 @Composable
 fun NaverMapView(
     modifier: Modifier = Modifier,

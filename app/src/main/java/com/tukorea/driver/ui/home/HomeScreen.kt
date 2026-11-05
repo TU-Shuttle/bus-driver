@@ -1,178 +1,272 @@
 package com.tukorea.driver.ui.home
 
 import android.Manifest
-import androidx.compose.foundation.layout.*
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MyLocation
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.res.stringResource
-import com.tukorea.driver.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.naver.maps.map.LocationTrackingMode
+import com.naver.maps.map.NaverMap
+import com.tukorea.driver.R
 import com.tukorea.driver.domain.model.DepartureRiders
 import com.tukorea.driver.domain.model.DrivingStatus
 import com.tukorea.driver.domain.model.ShuttleStop
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import com.tukorea.driver.ui.common.BottomModal
+import com.tukorea.driver.domain.model.WebSocketConnectionState
 import com.tukorea.driver.ui.common.BusButton
 import com.tukorea.driver.ui.common.BusButtonStyle
-import com.tukorea.driver.ui.common.StatusTitle
-import com.tukorea.driver.ui.theme.BusTheme
-import com.tukorea.driver.ui.theme.busColors
+import com.tukorea.driver.ui.common.StatusDot
 import com.tukorea.driver.ui.map.MapViewModel
 import com.tukorea.driver.ui.map.NaverMapView
+import com.tukorea.driver.ui.theme.BusTheme
+import com.tukorea.driver.ui.theme.busColors
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+private val Inset = 24.dp
+
+/**
+ * 기사 앱의 유일한 화면. 전체 지도 위에 고정 시트를 두고,
+ * 운행 상태·위치 전송 상태·다음 출발편 탑승 예정을 한눈에 보여준다.
+ */
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun HomeScreen(
-    onNavigateTo: (String) -> Unit,
+fun DriverHomeRoute(
     viewModel: HomeViewModel = hiltViewModel(),
     mapViewModel: MapViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mapState by mapViewModel.state.collectAsStateWithLifecycle()
 
-    val locationPermissionsState = rememberMultiplePermissionsState(
-        permissions = listOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-        ),
+    val locationPermissions = rememberMultiplePermissionsState(
+        listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
     )
-
-    LaunchedEffect(locationPermissionsState.allPermissionsGranted) {
-        if (locationPermissionsState.allPermissionsGranted) {
-            mapViewModel.onLocationPermissionGranted()
-        }
-    }
-
     LaunchedEffect(Unit) {
-        if (uiState.modalHeight != ModalHeight.MID) {
-            viewModel.updateModalHeight(ModalHeight.MID)
-        }
-
-        if (locationPermissionsState.allPermissionsGranted) {
+        if (!locationPermissions.allPermissionsGranted) locationPermissions.launchMultiplePermissionRequest()
+    }
+    LaunchedEffect(locationPermissions.allPermissionsGranted) {
+        if (locationPermissions.allPermissionsGranted) {
+            mapViewModel.onLocationPermissionGranted()
             mapViewModel.loadCurrentLocation()
         }
     }
 
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    var naverMap by remember { mutableStateOf<NaverMap?>(null) }
+    var sheetHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
-    // 지도 아래 여백 = 시트 기본(MID) 높이
-    val fixedHeight = screenHeight * 0.40f
-    var naverMap by remember { mutableStateOf<com.naver.maps.map.NaverMap?>(null) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        NaverMapView(
+            modifier = Modifier.fillMaxSize(),
+            currentLocation = mapState.currentLocation,
+            isLocationPermissionGranted = locationPermissions.allPermissionsGranted,
+            onMapReady = {
+                if (locationPermissions.allPermissionsGranted) mapViewModel.loadCurrentLocation()
+            },
+            bottomPadding = with(density) { sheetHeight.roundToPx() },
+            onMapInitialized = { naverMap = it },
+        )
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-    ) { paddingValues ->
-        Box(
+        if (locationPermissions.allPermissionsGranted) {
+            LocateMeButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = sheetHeight + 16.dp),
+                onClick = { naverMap?.locationTrackingMode = LocationTrackingMode.Follow },
+            )
+        }
+
+        DriverSheet(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                NaverMapView(
-                    modifier = Modifier.fillMaxSize(),
-                    currentLocation = mapState.currentLocation,
-                    isLocationPermissionGranted = locationPermissionsState.allPermissionsGranted,
-                    onMapReady = {
-                        if (locationPermissionsState.allPermissionsGranted) {
-                            mapViewModel.loadCurrentLocation()
-                        }
-                    },
-                    bottomPadding = with(density) {
-                        (fixedHeight.toPx()).toInt()
-                    },
-                    onMapInitialized = { map -> naverMap = map },
-                )
-                if (locationPermissionsState.allPermissionsGranted) {
-                    LocateMeButton(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = 16.dp, bottom = fixedHeight + 16.dp),
-                        onClick = {
-                            naverMap?.locationTrackingMode = com.naver.maps.map.LocationTrackingMode.Follow
-                        },
-                    )
-                }
-            }
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { sheetHeight = with(density) { it.height.toDp() } },
+            status = uiState.drivingStatus,
+            connection = mapState.webSocketConnectionState,
+            riders = uiState.upcomingRiders,
+            onStart = viewModel::startDriving,
+            onWait = viewModel::startWaiting,
+            onStop = viewModel::stopDriving,
+        )
+    }
+}
 
-            BottomModal(
-                modalHeight = uiState.modalHeight,
-                onModalHeightChange = viewModel::updateModalHeight,
-                screenHeight = screenHeight,
-                density = density,
-                isVisible = uiState.isModalVisible,
-            ) {
-                // 기사용 홈 화면 콘텐츠
-                DriverHomeContent(viewModel = viewModel)
+@Composable
+fun DriverSheet(
+    status: DrivingStatus,
+    connection: WebSocketConnectionState,
+    riders: List<DepartureRiders>?,
+    onStart: () -> Unit,
+    onWait: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .padding(start = Inset, end = Inset, top = 24.dp, bottom = 16.dp),
+        ) {
+            DriverStatusPanel(status = status, connection = connection, onStart = onStart, onWait = onWait, onStop = onStop)
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            UpcomingRidersPanel(riders = riders)
+        }
+    }
+}
+
+/**
+ * 지금 상태를 크게 보여주고, 상태에 맞는 행동만 버튼으로 둔다.
+ * - 운행 전: [운행 시작]
+ * - 운행 중: [대기로 전환][운행 종료]
+ * - 대기 중: [운행 시작][운행 종료]
+ */
+@Composable
+fun DriverStatusPanel(
+    status: DrivingStatus,
+    connection: WebSocketConnectionState,
+    onStart: () -> Unit,
+    onWait: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val bus = MaterialTheme.busColors
+    val (titleRes, dotColor) = when (status) {
+        DrivingStatus.Stop -> R.string.driver_driving_status_stop to bus.textTertiary
+        DrivingStatus.Running -> R.string.driver_driving_status_running to bus.success
+        DrivingStatus.Waiting -> R.string.driver_driving_status_waiting to bus.warning
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StatusDot(color = dotColor, pulsing = status == DrivingStatus.Running)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = stringResource(titleRes), style = MaterialTheme.typography.headlineMedium)
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = stringResource(
+                when (status) {
+                    DrivingStatus.Stop -> R.string.driver_driving_status_stop_message
+                    DrivingStatus.Running -> R.string.driver_driving_status_running_message
+                    DrivingStatus.Waiting -> R.string.driver_driving_status_waiting_message
+                },
+            ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = bus.textSecondary,
+        )
+        if (status != DrivingStatus.Stop) {
+            Spacer(modifier = Modifier.height(8.dp))
+            ConnectionLine(connection)
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+
+        when (status) {
+            DrivingStatus.Stop -> BusButton(text = stringResource(R.string.driver_driving_button_start), onClick = onStart)
+            DrivingStatus.Running -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BusButton(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.driver_driving_button_waiting),
+                    onClick = onWait,
+                    style = BusButtonStyle.Secondary,
+                )
+                BusButton(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.driver_driving_button_stop),
+                    onClick = onStop,
+                    style = BusButtonStyle.Danger,
+                )
+            }
+            DrivingStatus.Waiting -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BusButton(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.driver_driving_button_start),
+                    onClick = onStart,
+                )
+                BusButton(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.driver_driving_button_stop),
+                    onClick = onStop,
+                    style = BusButtonStyle.Danger,
+                )
             }
         }
     }
 }
 
+/** 위치가 실제로 서버에 가고 있는지. 끊기면 기사가 바로 알 수 있게 빨간 점으로 보여준다. */
 @Composable
-fun DriverHomeContent(
-    viewModel: HomeViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    Column(verticalArrangement = Arrangement.spacedBy(28.dp)) {
-        DriverStatusPanel(
-            status = uiState.drivingStatus,
-            onStart = viewModel::startDriving,
-            onWait = viewModel::startWaiting,
-            onStop = viewModel::stopDriving,
-        )
-        UpcomingRidersPanel(riders = uiState.upcomingRiders)
+private fun ConnectionLine(connection: WebSocketConnectionState) {
+    val bus = MaterialTheme.busColors
+    val (textRes, color) = when (connection) {
+        WebSocketConnectionState.Connected -> R.string.driver_link_connected to bus.success
+        WebSocketConnectionState.Connecting -> R.string.driver_link_connecting to bus.warning
+        WebSocketConnectionState.Disconnected,
+        WebSocketConnectionState.Disconnecting,
+        -> R.string.driver_link_disconnected to bus.danger
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(modifier = Modifier.size(6.dp), shape = CircleShape, color = color) {}
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = stringResource(textRes), style = MaterialTheme.typography.bodySmall, color = bus.textSecondary)
     }
 }
 
 /** 학생들이 '이 셔틀 탈게요'로 남긴 다음 출발편 인원과 하차지. */
 @Composable
-fun UpcomingRidersPanel(
-    riders: List<DepartureRiders>?,
-    modifier: Modifier = Modifier,
-) {
+fun UpcomingRidersPanel(riders: List<DepartureRiders>?, modifier: Modifier = Modifier) {
     val bus = MaterialTheme.busColors
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            modifier = Modifier.padding(bottom = 4.dp),
             text = stringResource(R.string.driver_riders_title),
             style = MaterialTheme.typography.titleSmall,
             color = bus.textSecondary,
         )
         when {
-            riders == null -> Text(
-                modifier = Modifier.padding(vertical = 12.dp),
-                text = stringResource(R.string.driver_riders_unavailable),
-                style = MaterialTheme.typography.bodyMedium,
-                color = bus.textSecondary,
-            )
-            riders.isEmpty() -> Text(
-                modifier = Modifier.padding(vertical = 12.dp),
-                text = stringResource(R.string.driver_riders_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = bus.textSecondary,
-            )
+            riders == null -> EmptyLine(R.string.driver_riders_unavailable)
+            riders.isEmpty() -> EmptyLine(R.string.driver_riders_empty)
             else -> riders.forEachIndexed { index, departure ->
-                if (index > 0) {
-                    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                }
+                if (index > 0) HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 RidersRow(departure)
             }
         }
@@ -180,12 +274,21 @@ fun UpcomingRidersPanel(
 }
 
 @Composable
+private fun EmptyLine(@StringRes textRes: Int) {
+    Text(
+        modifier = Modifier.padding(vertical = 12.dp),
+        text = stringResource(textRes),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.busColors.textSecondary,
+    )
+}
+
+@Composable
 private fun RidersRow(departure: DepartureRiders) {
-    val bus = MaterialTheme.busColors
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -209,14 +312,14 @@ private fun RidersRow(departure: DepartureRiders) {
             }
             // 하차지가 하나면 오른쪽 인원과 겹치므로 "본교 하차"만 쓴다.
             val single = departure.dropOffs.keys.singleOrNull()
-            val dropOffs = departure.dropOffs.entries.sortedByDescending { it.value }.map { (stop, count) ->
+            val breakdown = departure.dropOffs.entries.sortedByDescending { it.value }.map { (stop, count) ->
                 stringResource(R.string.driver_drop_off_count, stringResource(stop.nameRes()), count)
             }
             val singleLabel = single?.let { stringResource(R.string.driver_drop_off_only, stringResource(it.nameRes())) }
             Text(
-                text = singleLabel ?: dropOffs.joinToString(" · "),
+                text = singleLabel ?: breakdown.joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
-                color = bus.textSecondary,
+                color = MaterialTheme.busColors.textSecondary,
             )
         }
         Text(
@@ -226,7 +329,6 @@ private fun RidersRow(departure: DepartureRiders) {
     }
 }
 
-/** 지도 위 둥근 내 위치 버튼(기본 SDK 버튼 대신). */
 @Composable
 private fun LocateMeButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
@@ -247,7 +349,7 @@ private fun LocateMeButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-@androidx.annotation.StringRes
+@StringRes
 private fun ShuttleStop.nameRes(): Int = when (this) {
     ShuttleStop.JEONGWANG_STATION -> R.string.driver_stop_station
     ShuttleStop.CAMPUS1 -> R.string.driver_stop_campus1
@@ -255,108 +357,19 @@ private fun ShuttleStop.nameRes(): Int = when (this) {
     ShuttleStop.CAMPUS2 -> R.string.driver_stop_campus2
 }
 
-/**
- * 기사 홈 패널. 지금 상태를 크게 보여주고, 상태에 맞는 행동만 버튼으로 보여준다.
- * - 종료: [운행 시작]
- * - 운행 중: [대기로 전환] [운행 종료]
- * - 대기 중: [운행 시작] [운행 종료]
- */
-@Composable
-fun DriverStatusPanel(
-    status: DrivingStatus,
-    onStart: () -> Unit,
-    onWait: () -> Unit,
-    onStop: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val bus = MaterialTheme.busColors
-    val (title, message, dotColor) =
-        when (status) {
-            DrivingStatus.Stop ->
-                Triple(
-                    stringResource(R.string.driver_driving_status_stop),
-                    stringResource(R.string.driver_driving_status_stop_message),
-                    bus.textTertiary,
-                )
-            DrivingStatus.Running ->
-                Triple(
-                    stringResource(R.string.driver_driving_status_running),
-                    stringResource(R.string.driver_driving_status_running_message),
-                    bus.success,
-                )
-            DrivingStatus.Waiting ->
-                Triple(
-                    stringResource(R.string.driver_driving_status_waiting),
-                    stringResource(R.string.driver_driving_status_waiting_message),
-                    bus.warning,
-                )
-        }
-
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            StatusTitle(title = title, dotColor = dotColor, pulsing = status == DrivingStatus.Running)
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = bus.textSecondary,
-            )
-        }
-
-        // 운행 중/대기 중엔 두 버튼을 나란히 둬서 시트가 길어지지 않게 한다.
-        when (status) {
-            DrivingStatus.Stop ->
-                BusButton(
-                    text = stringResource(R.string.driver_driving_button_start),
-                    onClick = onStart,
-                )
-            DrivingStatus.Running ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BusButton(
-                        modifier = Modifier.weight(1f),
-                        text = stringResource(R.string.driver_driving_button_waiting),
-                        onClick = onWait,
-                        style = BusButtonStyle.Secondary,
-                    )
-                    BusButton(
-                        modifier = Modifier.weight(1f),
-                        text = stringResource(R.string.driver_driving_button_stop),
-                        onClick = onStop,
-                        style = BusButtonStyle.Danger,
-                    )
-                }
-            DrivingStatus.Waiting ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BusButton(
-                        modifier = Modifier.weight(1f),
-                        text = stringResource(R.string.driver_driving_button_start),
-                        onClick = onStart,
-                    )
-                    BusButton(
-                        modifier = Modifier.weight(1f),
-                        text = stringResource(R.string.driver_driving_button_stop),
-                        onClick = onStop,
-                        style = BusButtonStyle.Danger,
-                    )
-                }
-        }
-    }
-}
-
 @Preview(showBackground = true, name = "운행 중")
 @Composable
-private fun DriverStatusPanelRunningPreview() {
+private fun DriverSheetRunningPreview() {
     BusTheme {
-        Surface { DriverStatusPanel(DrivingStatus.Running, {}, {}, {}, Modifier.padding(20.dp)) }
-    }
-}
-
-@Preview(showBackground = true, name = "종료 - 다크", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun DriverStatusPanelStopDarkPreview() {
-    BusTheme(darkTheme = true) {
-        Surface { DriverStatusPanel(DrivingStatus.Stop, {}, {}, {}, Modifier.padding(20.dp)) }
+        Box(modifier = Modifier.fillMaxSize().padding(top = 200.dp), contentAlignment = Alignment.BottomCenter) {
+            DriverSheet(
+                status = DrivingStatus.Running,
+                connection = WebSocketConnectionState.Connected,
+                riders = emptyList(),
+                onStart = {},
+                onWait = {},
+                onStop = {},
+            )
+        }
     }
 }

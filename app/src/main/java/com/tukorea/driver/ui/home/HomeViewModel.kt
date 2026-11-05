@@ -76,14 +76,6 @@ constructor(
         const val RIDERS_REFRESH_MS = 30_000L
     }
 
-    /**
-     * 홈 화면에서 사용하는 모달(bottom sheet)의 현재 높이 상태를 갱신합니다.
-     *
-     * @param height 현재 모달의 높이(열림/반쯤/닫힘 등)를 나타내는 값
-     */
-    fun updateModalHeight(height: ModalHeight) {
-        _uiState.value = _uiState.value.copy(modalHeight = height)
-    }
 
     /**
      * 운행을 시작합니다.

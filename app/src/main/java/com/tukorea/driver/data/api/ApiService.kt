@@ -2,14 +2,11 @@ package com.tukorea.driver.data.api
 
 import com.tukorea.driver.data.model.BusLocationResponse
 import com.tukorea.driver.data.model.RideSummaryEnvelope
-import com.tukorea.driver.data.model.TempResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
-    @GET("/api/temps") // GET /temp
-    suspend fun getTemps(): TempResponse
 
     /**
      * 특정 버스의 최신 위치를 조회합니다.
