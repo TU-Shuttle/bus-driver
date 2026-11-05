@@ -17,7 +17,10 @@ import androidx.compose.ui.res.stringResource
 import com.tukorea.driver.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.tukorea.driver.domain.model.DepartureRiders
 import com.tukorea.driver.domain.model.DrivingStatus
+import com.tukorea.driver.domain.model.ShuttleStop
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.tukorea.driver.ui.common.BottomModal
 import com.tukorea.driver.ui.common.BusButton
@@ -115,12 +118,93 @@ fun DriverHomeContent(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    DriverStatusPanel(
-        status = uiState.drivingStatus,
-        onStart = viewModel::startDriving,
-        onWait = viewModel::startWaiting,
-        onStop = viewModel::stopDriving,
-    )
+    Column(verticalArrangement = Arrangement.spacedBy(28.dp)) {
+        DriverStatusPanel(
+            status = uiState.drivingStatus,
+            onStart = viewModel::startDriving,
+            onWait = viewModel::startWaiting,
+            onStop = viewModel::stopDriving,
+        )
+        UpcomingRidersPanel(riders = uiState.upcomingRiders)
+    }
+}
+
+/** 학생들이 '이 셔틀 탈게요'로 남긴 다음 출발편 인원과 하차지. */
+@Composable
+fun UpcomingRidersPanel(
+    riders: List<DepartureRiders>?,
+    modifier: Modifier = Modifier,
+) {
+    val bus = MaterialTheme.busColors
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(R.string.driver_riders_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        when {
+            riders == null -> Text(
+                text = stringResource(R.string.driver_riders_unavailable),
+                style = MaterialTheme.typography.bodyMedium,
+                color = bus.textSecondary,
+            )
+            riders.isEmpty() -> Text(
+                text = stringResource(R.string.driver_riders_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = bus.textSecondary,
+            )
+            else -> riders.forEach { departure -> RidersRow(departure) }
+        }
+    }
+}
+
+@Composable
+private fun RidersRow(departure: DepartureRiders) {
+    val bus = MaterialTheme.busColors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "%02d:%02d".format(departure.departMinute / 60, departure.departMinute % 60) +
+                        "  " + stringResource(
+                            R.string.driver_direction,
+                            stringResource(departure.direction.origin.nameRes()),
+                            stringResource(departure.direction.destination.nameRes()),
+                        ),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                val dropOffs = departure.dropOffs.entries.sortedByDescending { it.value }.map { (stop, count) ->
+                    stringResource(R.string.driver_drop_off_count, stringResource(stop.nameRes()), count)
+                }
+                Text(
+                    text = dropOffs.joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = bus.textSecondary,
+                )
+            }
+            Text(
+                text = stringResource(R.string.driver_riders_count, departure.riders),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+            )
+        }
+    }
+}
+
+@androidx.annotation.StringRes
+private fun ShuttleStop.nameRes(): Int = when (this) {
+    ShuttleStop.JEONGWANG_STATION -> R.string.driver_stop_station
+    ShuttleStop.CAMPUS1 -> R.string.driver_stop_campus1
+    ShuttleStop.CAMPUS1_WEST_GATE -> R.string.driver_stop_west_gate
+    ShuttleStop.CAMPUS2 -> R.string.driver_stop_campus2
 }
 
 /**
