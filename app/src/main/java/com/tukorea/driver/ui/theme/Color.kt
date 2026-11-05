@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
  * (라이트/다크가 자동으로 바뀌도록)
  */
 
-// Brand
+// Accent (지도 위치 점·링크 등 제한적으로만 사용. 기본 브랜드색은 검정/흰색)
 val Blue50 = Color(0xFFE8F3FF)
 val Blue100 = Color(0xFFC9E2FF)
 val Blue400 = Color(0xFF4593FC)
@@ -47,4 +47,3 @@ val DarkOrange50 = Color(0xFF3A2E17)
 val DarkRed50 = Color(0xFF3A1D22)
 val DarkBlue50 = Color(0xFF1B2F4D)
 
-val PrimaryBlue = Blue500

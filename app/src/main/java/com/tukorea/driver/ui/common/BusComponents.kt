@@ -93,7 +93,7 @@ fun BusButton(
                     scaleY = scale
                 },
         enabled = enabled,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = colors,
         elevation = null,
         interactionSource = interactionSource,

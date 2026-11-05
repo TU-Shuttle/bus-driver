@@ -20,10 +20,10 @@ import androidx.core.view.WindowCompat
 
 private val LightColorScheme =
     lightColorScheme(
-        primary = Blue500,
+        primary = Black,
         onPrimary = White,
-        primaryContainer = Blue50,
-        onPrimaryContainer = Blue600,
+        primaryContainer = Gray100,
+        onPrimaryContainer = Black,
         secondary = Gray700,
         onSecondary = White,
         secondaryContainer = Gray100,
@@ -47,10 +47,10 @@ private val LightColorScheme =
 
 private val DarkColorScheme =
     darkColorScheme(
-        primary = Blue500,
-        onPrimary = White,
-        primaryContainer = DarkBlue50,
-        onPrimaryContainer = Blue100,
+        primary = White,
+        onPrimary = Black,
+        primaryContainer = DarkSurfaceHigh,
+        onPrimaryContainer = White,
         secondary = Gray400,
         onSecondary = Gray900,
         secondaryContainer = DarkSurfaceHigh,
@@ -118,11 +118,11 @@ val MaterialTheme.busColors: BusColors
 
 private val BusShapes =
     Shapes(
-        extraSmall = RoundedCornerShape(8.dp),
-        small = RoundedCornerShape(12.dp),
-        medium = RoundedCornerShape(16.dp),
-        large = RoundedCornerShape(24.dp),
-        extraLarge = RoundedCornerShape(28.dp),
+        extraSmall = RoundedCornerShape(6.dp),
+        small = RoundedCornerShape(8.dp),
+        medium = RoundedCornerShape(12.dp),
+        large = RoundedCornerShape(16.dp),
+        extraLarge = RoundedCornerShape(24.dp),
     )
 
 @Composable

@@ -32,7 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tukorea.driver.R
 import com.tukorea.driver.ui.main.MainActivity
-import com.tukorea.driver.ui.theme.Blue500
+import com.tukorea.driver.ui.theme.Black
 import com.tukorea.driver.ui.theme.BusTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -87,7 +87,7 @@ private fun SplashContent() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Blue500),
+                .background(Black),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
