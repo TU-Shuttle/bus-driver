@@ -18,7 +18,13 @@ import com.tukorea.driver.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tukorea.driver.domain.model.DrivingStatus
+import androidx.compose.ui.tooling.preview.Preview
 import com.tukorea.driver.ui.common.BottomModal
+import com.tukorea.driver.ui.common.BusButton
+import com.tukorea.driver.ui.common.BusButtonStyle
+import com.tukorea.driver.ui.common.StatusTitle
+import com.tukorea.driver.ui.theme.BusTheme
+import com.tukorea.driver.ui.theme.busColors
 import com.tukorea.driver.ui.map.MapViewModel
 import com.tukorea.driver.ui.map.NaverMapView
 
@@ -109,107 +115,111 @@ fun DriverHomeContent(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        // 운행 상태 표시
-        Text(
-            text = stringResource(R.string.driver_driving_status_title),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        )
+    DriverStatusPanel(
+        status = uiState.drivingStatus,
+        onStart = viewModel::startDriving,
+        onWait = viewModel::startWaiting,
+        onStop = viewModel::stopDriving,
+    )
+}
 
-        // 현재 운행 상태 표시
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-            color = when (uiState.drivingStatus) {
-                DrivingStatus.Stop -> MaterialTheme.colorScheme.surfaceVariant
-                DrivingStatus.Running -> MaterialTheme.colorScheme.primaryContainer
-                DrivingStatus.Waiting -> MaterialTheme.colorScheme.secondaryContainer
-            },
-        ) {
+/**
+ * 기사 홈 패널. 지금 상태를 크게 보여주고, 상태에 맞는 행동만 버튼으로 보여준다.
+ * - 종료: [운행 시작]
+ * - 운행 중: [대기로 전환] [운행 종료]
+ * - 대기 중: [운행 시작] [운행 종료]
+ */
+@Composable
+fun DriverStatusPanel(
+    status: DrivingStatus,
+    onStart: () -> Unit,
+    onWait: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val bus = MaterialTheme.busColors
+    val (title, message, dotColor) =
+        when (status) {
+            DrivingStatus.Stop ->
+                Triple(
+                    stringResource(R.string.driver_driving_status_stop),
+                    stringResource(R.string.driver_driving_status_stop_message),
+                    bus.textTertiary,
+                )
+            DrivingStatus.Running ->
+                Triple(
+                    stringResource(R.string.driver_driving_status_running),
+                    stringResource(R.string.driver_driving_status_running_message),
+                    bus.success,
+                )
+            DrivingStatus.Waiting ->
+                Triple(
+                    stringResource(R.string.driver_driving_status_waiting),
+                    stringResource(R.string.driver_driving_status_waiting_message),
+                    bus.warning,
+                )
+        }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatusTitle(title = title, dotColor = dotColor, pulsing = status == DrivingStatus.Running)
             Text(
-                modifier = Modifier.padding(16.dp),
-                text = when (uiState.drivingStatus) {
-                    DrivingStatus.Stop -> stringResource(R.string.driver_driving_status_stop)
-                    DrivingStatus.Running -> stringResource(R.string.driver_driving_status_running)
-                    DrivingStatus.Waiting -> stringResource(R.string.driver_driving_status_waiting)
-                },
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                text = message,
+                style = MaterialTheme.typography.bodyLarge,
+                color = bus.textSecondary,
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 운행 상태 버튼들
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // 운행 버튼
-            Button(
-                onClick = { viewModel.startDriving() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = uiState.drivingStatus != DrivingStatus.Running,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
-            ) {
-                Text(
-                    text = stringResource(R.string.driver_driving_button_start),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                )
-            }
-
-            // 대기 버튼
-            Button(
-                onClick = { viewModel.startWaiting() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = uiState.drivingStatus != DrivingStatus.Waiting,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                ),
-            ) {
-                Text(
-                    text = stringResource(R.string.driver_driving_button_waiting),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                )
-            }
-
-            // 운행 종료 버튼
-            OutlinedButton(
-                onClick = { viewModel.stopDriving() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = uiState.drivingStatus != DrivingStatus.Stop,
-            ) {
-                Text(
-                    text = stringResource(R.string.driver_driving_button_stop),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            when (status) {
+                DrivingStatus.Stop ->
+                    BusButton(
+                        text = stringResource(R.string.driver_driving_button_start),
+                        onClick = onStart,
+                    )
+                DrivingStatus.Running -> {
+                    BusButton(
+                        text = stringResource(R.string.driver_driving_button_waiting),
+                        onClick = onWait,
+                        style = BusButtonStyle.Secondary,
+                    )
+                    BusButton(
+                        text = stringResource(R.string.driver_driving_button_stop),
+                        onClick = onStop,
+                        style = BusButtonStyle.Danger,
+                    )
+                }
+                DrivingStatus.Waiting -> {
+                    BusButton(
+                        text = stringResource(R.string.driver_driving_button_start),
+                        onClick = onStart,
+                    )
+                    BusButton(
+                        text = stringResource(R.string.driver_driving_button_stop),
+                        onClick = onStop,
+                        style = BusButtonStyle.Danger,
+                    )
+                }
             }
         }
+    }
+}
 
-        // 안내 메시지
-        Text(
-            text = when (uiState.drivingStatus) {
-                DrivingStatus.Stop -> stringResource(R.string.driver_driving_status_stop_message)
-                DrivingStatus.Running -> stringResource(R.string.driver_driving_status_running_message)
-                DrivingStatus.Waiting -> stringResource(R.string.driver_driving_status_waiting_message)
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+@Preview(showBackground = true, name = "운행 중")
+@Composable
+private fun DriverStatusPanelRunningPreview() {
+    BusTheme {
+        Surface { DriverStatusPanel(DrivingStatus.Running, {}, {}, {}, Modifier.padding(20.dp)) }
+    }
+}
+
+@Preview(showBackground = true, name = "종료 - 다크", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun DriverStatusPanelStopDarkPreview() {
+    BusTheme(darkTheme = true) {
+        Surface { DriverStatusPanel(DrivingStatus.Stop, {}, {}, {}, Modifier.padding(20.dp)) }
     }
 }

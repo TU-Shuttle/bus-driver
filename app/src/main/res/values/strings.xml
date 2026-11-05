@@ -164,14 +164,14 @@
     <string name="driver_driving_status_waiting">대기 중</string>
 
     <!-- 운행 버튼 -->
-    <string name="driver_driving_button_start">운행</string>
-    <string name="driver_driving_button_waiting">대기</string>
+    <string name="driver_driving_button_start">운행 시작</string>
+    <string name="driver_driving_button_waiting">대기로 전환</string>
     <string name="driver_driving_button_stop">운행 종료</string>
 
     <!-- 운행 상태 안내 메시지 -->
-    <string name="driver_driving_status_stop_message">운행 종료 상태입니다. 위치가 전송되지 않습니다.</string>
-    <string name="driver_driving_status_running_message">운행 중입니다. 위치가 서버로 전송됩니다.</string>
-    <string name="driver_driving_status_waiting_message">대기 중입니다. 위치가 서버로 전송됩니다.</string>
+    <string name="driver_driving_status_stop_message">운행을 시작하면 위치가 학생들에게 공유돼요.</string>
+    <string name="driver_driving_status_running_message">위치를 실시간으로 공유하고 있어요.</string>
+    <string name="driver_driving_status_waiting_message">대기 중에도 위치는 공유돼요.</string>
 
     <!-- 네비게이션 -->
     <string name="driver_nav_home">홈</string>

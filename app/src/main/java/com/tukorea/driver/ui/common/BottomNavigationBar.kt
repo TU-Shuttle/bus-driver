@@ -6,12 +6,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.tukorea.driver.R
 import com.tukorea.driver.ui.navigation.Screen
 import com.tukorea.driver.ui.theme.BusTheme
-import com.tukorea.driver.ui.theme.Gray400
-import com.tukorea.driver.ui.theme.PrimaryBlue
-import com.tukorea.driver.ui.theme.White
+import com.tukorea.driver.ui.theme.busColors
 
 @Composable
 fun BottomNavigationBar(
@@ -26,7 +25,8 @@ fun BottomNavigationBar(
         )
 
     NavigationBar(
-        containerColor = White,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
     ) {
         navItems.forEach { item ->
             NavigationBarItem(
@@ -47,11 +47,11 @@ fun BottomNavigationBar(
                 },
                 colors =
                     NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
                         indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                        unselectedIconColor = Gray400,
-                        unselectedTextColor = Gray400,
+                        unselectedIconColor = MaterialTheme.busColors.textTertiary,
+                        unselectedTextColor = MaterialTheme.busColors.textTertiary,
                     ),
             )
         }

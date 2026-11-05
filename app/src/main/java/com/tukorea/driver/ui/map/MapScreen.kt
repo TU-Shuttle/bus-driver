@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -112,6 +113,7 @@ fun NaverMapView(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val isDarkTheme = isSystemInDarkTheme()
 
     // MapView 인스턴스 (Configuration change에도 유지)
     val mapView = remember { MapView(context) }
@@ -241,6 +243,9 @@ fun NaverMapView(
         update = { view ->
             // 시스템 바 영역만큼 맵 UI 컨트롤 위치 조정
             naverMap?.let { map ->
+                // 다크 모드에서는 야간 지도로 전환
+                map.mapType = if (isDarkTheme) NaverMap.MapType.Navi else NaverMap.MapType.Basic
+                map.isNightModeEnabled = isDarkTheme
                 val density = view.context.resources.displayMetrics.density
                 val bottomPadding = (NAVIGATION_BAR_PADDING_DP * density).toInt() // 네비게이션 바 + 여유 공간
                 map.setContentPadding(0, 0, 0, bottomPadding)
