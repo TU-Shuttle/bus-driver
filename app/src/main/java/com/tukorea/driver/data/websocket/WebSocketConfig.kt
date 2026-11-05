@@ -11,6 +11,12 @@ data class WebSocketConfig(
     val url: String,
 
     /**
+     * 서버(/ws) 인증 토큰. X-Driver-Token 헤더로 전송합니다.
+     * BuildConfig(.env의 DRIVER_TOKEN)에서 주입받습니다.
+     */
+    val driverToken: String = "",
+
+    /**
      * 재연결 시도 최대 횟수
      */
     val maxReconnectAttempts: Int = 10,

@@ -56,6 +56,7 @@ class WebSocketDataSource
 
         private companion object {
             private const val TAG = "WebSocketDataSource"
+            private const val DRIVER_TOKEN_HEADER = "X-Driver-Token"
         }
 
         init {
@@ -170,7 +171,11 @@ class WebSocketDataSource
             Log.d(TAG, "WebSocket 연결 시도: ${config.url} (시도 횟수: ${reconnectAttempts + 1})")
             _connectionState.value = WebSocketConnectionState.Connecting
 
-            val request = Request.Builder().url(config.url).build()
+            val request =
+                Request.Builder()
+                    .url(config.url)
+                    .apply { if (config.driverToken.isNotBlank()) header(DRIVER_TOKEN_HEADER, config.driverToken) }
+                    .build()
             webSocket = okHttpClient.newWebSocket(request, createWebSocketListener())
         }
 
@@ -258,8 +263,12 @@ class WebSocketDataSource
                 }
 
                 override fun onMessage(webSocket: WebSocket, text: String) {
-                    Log.d(TAG, "WebSocket 메시지 수신: $text")
-                    // 필요시 서버로부터의 메시지 처리
+                    // 서버는 잘못된 위치 메시지에 {"error":"..."} 로 응답합니다(연결은 유지됨).
+                    if (text.contains("\"error\"")) {
+                        Log.w(TAG, "서버가 위치 메시지를 거절했습니다: $text")
+                    } else {
+                        Log.d(TAG, "WebSocket 메시지 수신: $text")
+                    }
                 }
 
                 override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {

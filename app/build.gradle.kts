@@ -93,11 +93,13 @@ android {
         debug {
             buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
             buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL")}\"")
+            buildConfigField("String", "DRIVER_TOKEN", "\"${getEnv("DRIVER_TOKEN")}\"")
         }
         release {
             isMinifyEnabled = false
             buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
             buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL")}\"")
+            buildConfigField("String", "DRIVER_TOKEN", "\"${getEnv("DRIVER_TOKEN")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

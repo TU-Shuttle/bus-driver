@@ -60,7 +60,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideWebSocketConfig(): WebSocketConfig = WebSocketConfig(url = BuildConfig.WS_URL)
+    fun provideWebSocketConfig(): WebSocketConfig = WebSocketConfig(url = BuildConfig.WS_URL, driverToken = BuildConfig.DRIVER_TOKEN)
 
     @Provides
     @Singleton
