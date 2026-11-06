@@ -160,6 +160,8 @@ fun NaverMapView(
                 onCreate(Bundle())
                 getMapAsync { map ->
                     naverMap = map
+                    // 기기 언어와 상관없이 한글 지명만 보여준다.
+                    map.locale = java.util.Locale.KOREA
 
                     // 위치 소스 설정 (FusedLocationSource)
                     map.locationSource = locationSource
