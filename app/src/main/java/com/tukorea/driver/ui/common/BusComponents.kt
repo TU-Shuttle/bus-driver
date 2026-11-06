@@ -102,66 +102,6 @@ fun BusButton(
     }
 }
 
-/** 행 안의 작은 보조 버튼(36dp). 위험한 동작이 아니면 빨간색을 쓰지 않는다. */
-@Composable
-fun SmallSecondaryButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    Surface(
-        modifier = modifier.height(36.dp),
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Box(modifier = Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.busColors.textTertiary,
-            )
-        }
-    }
-}
-
-enum class ChipTone { Neutral, Primary, Success, Warning, Danger }
-
-/** 작은 상태 표시 칩. */
-@Composable
-fun StatusChip(
-    text: String,
-    tone: ChipTone,
-    modifier: Modifier = Modifier,
-) {
-    val bus = MaterialTheme.busColors
-    val scheme = MaterialTheme.colorScheme
-    val (container, content) =
-        when (tone) {
-            ChipTone.Neutral -> scheme.surfaceVariant to bus.textSecondary
-            ChipTone.Primary -> scheme.primaryContainer to scheme.primary
-            ChipTone.Success -> bus.successContainer to bus.success
-            ChipTone.Warning -> bus.warningContainer to bus.warning
-            ChipTone.Danger -> bus.dangerContainer to bus.danger
-        }
-
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(50),
-        color = container,
-    ) {
-        Text(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            text = text,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = content,
-        )
-    }
-}
-
 /** 상태 점. pulsing 이면 숨 쉬듯 깜빡여 '진행 중'임을 보여준다. */
 @Composable
 fun StatusDot(
@@ -195,29 +135,6 @@ fun StatusDot(
                     .size(10.dp)
                     .clip(CircleShape)
                     .background(color),
-        )
-    }
-}
-
-/** 제목 옆에 상태 점을 붙이는 한 줄. */
-@Composable
-fun StatusTitle(
-    title: String,
-    dotColor: Color,
-    pulsing: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        StatusDot(color = dotColor, pulsing = pulsing)
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

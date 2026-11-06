@@ -1,14 +1,12 @@
 package com.tukorea.driver.di
 
 import android.content.Context
-import com.tukorea.driver.data.api.ApiService
 import com.tukorea.driver.data.location.LocationDataSource
 import com.tukorea.driver.data.repository.MapRepositoryImpl
 import com.tukorea.driver.data.websocket.WebSocketDataSource
 import com.tukorea.driver.domain.repository.MapRepository
 import com.tukorea.driver.domain.usecase.ConnectWebSocketUseCase
 import com.tukorea.driver.domain.usecase.DisconnectWebSocketUseCase
-import com.tukorea.driver.domain.usecase.GetBusLocationFromServerUseCase
 import com.tukorea.driver.domain.usecase.GetCurrentLocationUseCase
 import com.tukorea.driver.domain.usecase.GetLocationUpdatesUseCase
 import com.tukorea.driver.domain.usecase.ObserveWebSocketConnectionStateUseCase
@@ -34,9 +32,8 @@ object MapModule {
     fun provideMapRepository(
         locationDataSource: LocationDataSource,
         webSocketDataSource: WebSocketDataSource,
-        apiService: ApiService,
     ): MapRepository =
-        MapRepositoryImpl(locationDataSource, webSocketDataSource, apiService)
+        MapRepositoryImpl(locationDataSource, webSocketDataSource)
 
     @Provides
     @Singleton
@@ -67,9 +64,4 @@ object MapModule {
     @Singleton
     fun provideObserveWebSocketConnectionStateUseCase(repository: MapRepository): ObserveWebSocketConnectionStateUseCase =
         ObserveWebSocketConnectionStateUseCase(repository)
-
-    @Provides
-    @Singleton
-    fun provideGetBusLocationFromServerUseCase(repository: MapRepository): GetBusLocationFromServerUseCase =
-        GetBusLocationFromServerUseCase(repository)
 }

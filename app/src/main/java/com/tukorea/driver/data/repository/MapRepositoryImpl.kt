@@ -1,16 +1,13 @@
 package com.tukorea.driver.data.repository
 
 import android.util.Log
-import com.tukorea.driver.data.api.ApiService
 import com.tukorea.driver.data.location.LocationDataSource
 import com.tukorea.driver.data.location.LocationForegroundService
-import com.tukorea.driver.data.util.NetworkErrorHandler
 import com.tukorea.driver.data.websocket.WebSocketDataSource
 import com.tukorea.driver.domain.error.MapError
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.repository.MapRepository
 import com.tukorea.driver.domain.util.MapResult
-import com.tukorea.driver.domain.util.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
@@ -23,7 +20,6 @@ class MapRepositoryImpl
     constructor(
         private val locationDataSource: LocationDataSource,
         private val webSocketDataSource: WebSocketDataSource,
-        private val apiService: ApiService,
     ) : MapRepository {
         private companion object {
             private const val TAG = "MapRepositoryImpl"
@@ -86,34 +82,4 @@ class MapRepositoryImpl
          */
         override fun observeWebSocketConnectionState() = webSocketDataSource.connectionState
 
-        /**
-         * ApiService를 통해 서버에서 버스 위치를 조회합니다.
-         * Repository는 데이터 소스 추상화만 담당하며, 비즈니스 로직은 UseCase에서 처리합니다.
-         */
-        override suspend fun getBusLocationFromServer(busId: String): MapResult<MapLocation?> {
-            return NetworkErrorHandler.handleMapNetworkRequest(
-                tag = TAG,
-                block = {
-                    val response = apiService.getBusLocation(busId)
-
-                    if (response == null) {
-                        Log.d(TAG, "서버 응답: null (busId=$busId)")
-                        Result.Success(null)
-                    } else {
-                        Log.d(
-                            TAG,
-                            "서버에서 버스 위치 조회 성공: busId=$busId, lat=${response.lat}, lng=${response.lng}",
-                        )
-
-                        Result.Success(
-                            MapLocation(
-                                latitude = response.lat,
-                                longitude = response.lng,
-                                accuracy = response.accuracy,
-                            ),
-                        )
-                    }
-                },
-            )
-        }
     }
