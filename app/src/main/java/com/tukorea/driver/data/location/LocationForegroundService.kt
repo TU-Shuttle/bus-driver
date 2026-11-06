@@ -44,7 +44,7 @@ class LocationForegroundService : Service() {
         private const val TAG = "LocationForegroundService"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "location_service_channel"
-        private const val LOCATION_UPDATE_INTERVAL_MS = 5_000L
+        private const val LOCATION_UPDATE_INTERVAL_MS = 2_000L
         private const val LOCATION_FASTEST_INTERVAL_MS = 2_000L
     }
 

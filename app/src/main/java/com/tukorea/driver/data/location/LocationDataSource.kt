@@ -29,7 +29,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val LOCATION_TIMEOUT_MS = 10_000L
-private const val LOCATION_UPDATE_INTERVAL_MS = 5_000L
+private const val LOCATION_UPDATE_INTERVAL_MS = 2_000L
 private const val LOCATION_FASTEST_INTERVAL_MS = 2_000L
 
 @Singleton
