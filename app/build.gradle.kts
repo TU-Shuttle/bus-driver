@@ -76,6 +76,9 @@ fun generateNetworkSecurityConfig(): String {
 """
 }
 
+// 릴리즈 서명: .env 또는 환경변수에 RELEASE_STORE_FILE 등을 넣으면 서명한다. 없으면 서명 없는 release가 나온다.
+val releaseStoreFile = getEnv("RELEASE_STORE_FILE")
+
 android {
     namespace = "com.tukorea.driver"
     compileSdk {
@@ -93,6 +96,17 @@ android {
         manifestPlaceholders["naverMapClientId"] = getEnv("NAVER_MAP_CLIENT_ID")
     }
 
+    signingConfigs {
+        if (releaseStoreFile.isNotBlank()) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = getEnv("RELEASE_STORE_PASSWORD")
+                keyAlias = getEnv("RELEASE_KEY_ALIAS")
+                keyPassword = getEnv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
@@ -100,7 +114,10 @@ android {
             buildConfigField("String", "DRIVER_TOKEN", "\"${getEnv("DRIVER_TOKEN")}\"")
         }
         release {
-            isMinifyEnabled = false
+            // 코드 축소·난독화. 서버와 주고받는 JSON 클래스는 proguard-rules.pro에서 지킨다.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.findByName("release")
             buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
             buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL")}\"")
             buildConfigField("String", "DRIVER_TOKEN", "\"${getEnv("DRIVER_TOKEN")}\"")

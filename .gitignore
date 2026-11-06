@@ -10,3 +10,7 @@ local.properties
 .cxx
 .env
 detekt-baseline.xml
+
+# 릴리즈 서명 키는 저장소에 넣지 않는다
+*.jks
+*.keystore
