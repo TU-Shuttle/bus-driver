@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 버스 정면을 단순화한 글리프. 108 격자의 안전 영역(지름 66) 안에 들어간다. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#FF000000" android:fillType="evenOdd" android:pathData="M44,33H64A7,7 0 0,1 71,40V62A7,7 0 0,1 64,69H44A7,7 0 0,1 37,62V40A7,7 0 0,1 44,33ZM45,39H63A3,3 0 0,1 66,42V50A3,3 0 0,1 63,53H45A3,3 0 0,1 42,50V42A3,3 0 0,1 45,39ZM43.5,61A2.5,2.5 0 1,0 48.5,61A2.5,2.5 0 1,0 43.5,61ZM59.5,61A2.5,2.5 0 1,0 64.5,61A2.5,2.5 0 1,0 59.5,61Z" />
+    <path android:fillColor="#FF000000" android:pathData="M40,69H47V73A2,2 0 0,1 45,75H42A2,2 0 0,1 40,73ZM61,69H68V73A2,2 0 0,1 66,75H63A2,2 0 0,1 61,73Z" />
+</vector>

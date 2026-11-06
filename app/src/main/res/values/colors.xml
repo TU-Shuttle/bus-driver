@@ -1,59 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 프로젝트가 xml에서 compose로 마이그레이션 하면서 이제 사용 안함   -->
-    <!-- Primary Colors (메인 색상) -->
-    <color name="Blue_600">#2563eb</color> <!-- 메인 브랜드, 버튼, A노선 -->
-    <color name="Blue_500">#3b82f6</color> <!-- 그라데이션, 내 위치 표시-->
-    <color name="Blue_400">#60a5fa</color> <!-- 펄스 애니메이션-->
-    <color name="Blue_300">#93c5fd</color> <!-- 외곽 펄스-->
-    <color name="Blue_100">#dbeafe</color> <!-- 배경, 카드-->
-    <color name="Blue_50">#eff6ff</color>  <!-- 연한 배경-->
-
-    <!-- Secondary Colors (보조 색상) -->
-    <color name="Green_600">#16a34a</color> <!-- B노선, 운행중-->
-    <color name="Green_100">#dcfce7</color>
-    <color name="Green_50">#f0fdf4</color>
-
-    <color name="Orange_600">#ea580c</color> <!-- 순환 노선-->
-    <color name="Orange_100">#ffedd5</color>
-    <color name="Orange_50">#fff7ed</color>
-
-    <!-- Alert Colors (경고/상태) -->
-    <color name="Red_500">#ef4444</color>    <!-- 예전 내 위치 핀-->
-    <color name="Yellow_700">#a16207</color>
-    <color name="Yellow_100">#fef9c3</color>
-
-    <!-- Neutral Colors (중립 색상) -->
-    <color name="white">#ffffff</color>
-
-    <color name="Gray_900">#111827</color> <!-- 주요 텍스트-->
-    <color name="Gray_700">#374151</color> <!-- 아이콘-->
-    <color name="Gray_600">#4b5563</color> <!-- 부제목-->
-    <color name="Gray_500">#6b7280</color> <!-- 보조 텍스트-->
-    <color name="Gray_400">#9ca3af</color> <!-- 비활성 아이콘,도로-->
-    <color name="Gray_300">#d1d5db</color> <!-- 구분선-->
-    <color name="Gray_200">#e5e7eb</color> <!-- 테두리-->
-    <color name="Gray_100">#f3f4f6</color> <!-- 배경 강조-->
-    <color name="Gray_50">#f9fafb</color>  <!-- 카드 배경-->
-
-    <!-- Background Gradients (그라데이션) -->
-    <!-- XML에서는 직접 정의 불가 -> shape drawable로 따로 사용해야 함-->
-    <!-- 기록용 -->
-    <color name="Gradient_Map_From">#e2e8f0</color> <!-- slate-200 -->
-    <color name="Gradient_Map_Via">#eff6ff</color>  <!-- blue-50 -->
-    <color name="Gradient_Map_To">#f1f5f9</color>   <!-- slate-100 -->
-
-    <color name="Gradient_Reserve_From">#2563eb</color> <!-- blue-600 -->
-    <color name="Gradient_Reserve_To">#3b82f6</color>   <!-- blue- 500 -->
-
-    <!-- Opacity Values(투명도) -> 참고용, XML에서는 /alpha 또는 #AARRGGBB로 사용 -->
-    <color name="White_Opacity_90">#E6FFFFFF</color> <!-- 90% -->
-    <color name="White_Opacity_30">#4DFFFFFF</color> <!-- 30% -->
-    <color name="White_Opacity_20">#33FFFFFF</color> <!-- 20% -->
-    <color name="White_Opacity_10">#1AFFFFFF</color> <!-- 10% -->
-
-    <color name="Bg_White_95">#F2FFFFFF</color> <!-- 흰색 / 95%-->
-    <color name="Bg_White_20">#33FFFFFF</color> <!-- 흰색 / 20%-->
-
-
+    <!-- 화면 색은 Compose(ui/theme)가 맡는다. 여기에는 Compose 밖(런처 아이콘, 시스템 스플래시)에서 쓰는 색만 둔다. -->
+    <color name="launcher_background">#FFFFFFFF</color>
+    <color name="splash_background">#FFFFFFFF</color>
+    <color name="splash_glyph">#FF000000</color>
 </resources>

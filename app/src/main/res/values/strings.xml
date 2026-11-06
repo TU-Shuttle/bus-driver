@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">driver</string>
+    <string name="app_name">TU Shuttle 기사</string>
 
     <!-- Home 화면 -->
     <string name="home_notification_icon_cd">알림</string>

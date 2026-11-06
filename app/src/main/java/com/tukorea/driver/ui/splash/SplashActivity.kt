@@ -4,107 +4,39 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tukorea.driver.R
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.tukorea.driver.ui.main.MainActivity
-import com.tukorea.driver.ui.theme.Black
-import com.tukorea.driver.ui.theme.BusTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
+/**
+ * 시스템 스플래시(흰 바탕 + 버스 글리프)를 초기화가 끝날 때까지 그대로 띄워 두고 메인으로 넘긴다.
+ * 별도 Compose 화면을 두지 않아 스플래시가 두 번 바뀌어 보이지 않는다.
+ */
 @SuppressLint("CustomSplashScreen")
 @AndroidEntryPoint
 class SplashActivity : ComponentActivity() {
+
+    private val viewModel: SplashViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        splashScreen.setKeepOnScreenCondition { false }
-
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        splashScreen.setKeepOnScreenCondition { !viewModel.state.value.isInitialized }
 
-        setContent {
-            BusTheme {
-                SplashScreen(
-                    onNavigateToMain = {
-                        startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-                        finish()
-                    },
-                )
+        viewModel.initialize()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state.first { it.isInitialized }
+                startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                finish()
+                overridePendingTransition(0, 0)
             }
         }
-    }
-}
-
-@Composable
-private fun SplashScreen(
-    viewModel: SplashViewModel = hiltViewModel(),
-    onNavigateToMain: () -> Unit,
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    // 초기화 시작
-    LaunchedEffect(Unit) {
-        viewModel.initialize()
-    }
-
-    // 초기화 완료 또는 에러 시 메인으로 이동
-    LaunchedEffect(state.isInitialized, state.error) {
-        if (state.isInitialized || state.error != null) {
-            onNavigateToMain()
-        }
-    }
-
-    SplashContent()
-}
-
-@Composable
-private fun SplashContent() {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Black),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher_foreground),
-            contentDescription = stringResource(id = R.string.app_name),
-            modifier = Modifier.size(120.dp),
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = stringResource(id = R.string.app_name),
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.headlineMedium,
-        )
     }
 }
