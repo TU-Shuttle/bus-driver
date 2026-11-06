@@ -206,4 +206,6 @@
     <string name="bus_number_suffix">호차</string>
     <string name="bus_number_confirm">확인</string>
     <string name="bus_number_locked">운행 중엔 바꿀 수 없어요</string>
+    <string name="bus_number_taken">%1$d호차는 다른 기사가 운행 중이에요. 다른 번호를 넣어 주세요.</string>
+    <string name="bus_number_stopped_duplicate">%1$d호차를 다른 기사가 쓰고 있어 운행을 멈췄어요. 번호를 확인해 주세요.</string>
 </resources>

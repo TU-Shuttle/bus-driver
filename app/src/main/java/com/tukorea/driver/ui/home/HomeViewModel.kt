@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -61,15 +62,36 @@ constructor(
         busNumberRepository.number
             .onEach { number -> _uiState.value = _uiState.value.copy(busNumber = number) }
             .launchIn(viewModelScope)
+
+        // 운행 중 서버가 번호 중복으로 거절하면 위치 전송을 멈추고 기사에게 알린다.
+        busNumberRepository.taken
+            .onEach { number ->
+                val state = _uiState.value
+                if (number == state.busNumber && state.drivingStatus != DrivingStatus.Stop) {
+                    getDrivingStatusUseCase.updateStatus(DrivingStatus.Stop)
+                    _uiState.value = _uiState.value.copy(stoppedForDuplicate = number)
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
-     * 호차 번호를 정한다. 운행 중에 바꾸면 학생 앱에 이전 번호 버스가 잠시 남으므로 운행 전에만 바꿀 수 있다.
+     * 번호를 서버에 확인하고 쓸 수 있으면 저장한다. 다른 기사가 운행 중이면 [HomeUiState.takenNumber]에 남긴다.
+     * 서버에 닿지 않으면 일단 저장하고, 운행 중 서버 검사에 맡긴다.
      */
-    fun setBusNumber(number: Int) {
-        if (_uiState.value.drivingStatus != DrivingStatus.Stop) return
-        if (number !in BusNumberRepository.VALID) return
-        busNumberRepository.set(number)
+    fun claimBusNumber(number: Int, onClaimed: (Int) -> Unit) {
+        if (_uiState.value.drivingStatus != DrivingStatus.Stop || number !in BusNumberRepository.VALID) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCheckingNumber = true, takenNumber = null)
+            val available = busNumberRepository.isAvailable(number)
+            if (available == false) {
+                _uiState.value = _uiState.value.copy(isCheckingNumber = false, takenNumber = number)
+                return@launch
+            }
+            busNumberRepository.set(number)
+            _uiState.value = _uiState.value.copy(isCheckingNumber = false, stoppedForDuplicate = null)
+            onClaimed(number)
+        }
     }
 
     /** 운행 노선을 고른다. 운행 중에 바꾸면(예: 종점에서 반대 방향으로) 바로 학생 앱에 반영된다. */
@@ -86,6 +108,7 @@ constructor(
     fun startDriving() {
         // 화면 상태가 아니라 저장소를 직접 본다(번호·노선을 고른 직후 바로 시작하는 경우).
         if (routeRepository.selectedDirection.value == null || busNumberRepository.number.value == null) return
+        _uiState.value = _uiState.value.copy(stoppedForDuplicate = null)
         getDrivingStatusUseCase.updateStatus(DrivingStatus.Running)
     }
 

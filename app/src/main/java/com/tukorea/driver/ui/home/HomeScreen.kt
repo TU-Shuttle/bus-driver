@@ -54,6 +54,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import com.tukorea.driver.ui.common.distanceLabel
 import com.tukorea.driver.ui.common.label
@@ -150,6 +152,7 @@ fun DriverHomeRoute(
             status = uiState.drivingStatus,
             connection = mapState.webSocketConnectionState,
             busNumber = uiState.busNumber,
+            stoppedForDuplicate = uiState.stoppedForDuplicate,
             direction = uiState.direction,
             progress = mapState.progress,
             onPickBusNumber = { picker = Picker.Number(thenStart = false) },
@@ -171,9 +174,12 @@ fun DriverHomeRoute(
             when (current) {
                 is Picker.Number -> BusNumberSheet(
                     initial = uiState.busNumber,
+                    isChecking = uiState.isCheckingNumber,
+                    takenNumber = uiState.takenNumber,
                     onConfirm = { number ->
-                        viewModel.setBusNumber(number)
-                        if (current.thenStart) continueStart(number, uiState.direction) else picker = Picker.Closed
+                        viewModel.claimBusNumber(number) { claimed ->
+                            if (current.thenStart) continueStart(claimed, uiState.direction) else picker = Picker.Closed
+                        }
                     },
                 )
                 is Picker.Route -> RoutePicker(
@@ -208,6 +214,7 @@ fun DriverSheet(
     onWait: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
+    stoppedForDuplicate: Int? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -224,6 +231,7 @@ fun DriverSheet(
                 status = status,
                 connection = connection,
                 busNumber = busNumber,
+                stoppedForDuplicate = stoppedForDuplicate,
                 direction = direction,
                 progress = progress,
                 onPickBusNumber = onPickBusNumber,
@@ -256,6 +264,7 @@ fun DriverStatusPanel(
     onWait: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
+    stoppedForDuplicate: Int? = null,
 ) {
     val bus = MaterialTheme.busColors
     val (titleRes, dotColor) = when (status) {
@@ -291,6 +300,13 @@ fun DriverStatusPanel(
             if (driving) {
                 Spacer(modifier = Modifier.height(8.dp))
                 ConnectionLine(connection)
+            } else if (stoppedForDuplicate != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.bus_number_stopped_duplicate, stoppedForDuplicate),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = bus.danger,
+                )
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -404,10 +420,16 @@ private fun SettingRow(
 
 /** 호차 번호 입력. 숫자만 받고 1~99일 때만 확인을 누를 수 있다. */
 @Composable
-private fun BusNumberSheet(initial: Int?, onConfirm: (Int) -> Unit) {
+private fun BusNumberSheet(initial: Int?, isChecking: Boolean, takenNumber: Int?, onConfirm: (Int) -> Unit) {
     val bus = MaterialTheme.busColors
-    var text by remember { mutableStateOf(initial?.toString().orEmpty()) }
+    // 기존 번호는 전체 선택해 두어, 새 번호를 치면 바로 덮어쓰게 한다.
+    var field by remember {
+        val initialText = initial?.toString().orEmpty()
+        mutableStateOf(TextFieldValue(initialText, selection = TextRange(0, initialText.length)))
+    }
+    val text = field.text
     val number = text.toIntOrNull()?.takeIf { it in BusNumberRepository.VALID }
+    val isTaken = number != null && number == takenNumber
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
@@ -429,25 +451,37 @@ private fun BusNumberSheet(initial: Int?, onConfirm: (Int) -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focus),
-            value = text,
-            onValueChange = { input -> text = input.filter(Char::isDigit).take(2) },
+            value = field,
+            onValueChange = { input ->
+                val digits = input.text.filter(Char::isDigit).take(2)
+                field = input.copy(text = digits, selection = TextRange(digits.length))
+            },
             singleLine = true,
             textStyle = MaterialTheme.typography.headlineMedium,
             placeholder = { Text(stringResource(R.string.bus_number_hint), style = MaterialTheme.typography.headlineMedium) },
             suffix = { Text(stringResource(R.string.bus_number_suffix), style = MaterialTheme.typography.titleMedium) },
             shape = RoundedCornerShape(12.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { number?.let(onConfirm) }),
+            keyboardActions = KeyboardActions(onDone = { if (!isChecking) number?.let(onConfirm) }),
+            isError = isTaken,
+            supportingText = if (isTaken) {
+                { Text(stringResource(R.string.bus_number_taken, number!!)) }
+            } else {
+                null
+            },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                 cursorColor = MaterialTheme.colorScheme.onSurface,
+                errorBorderColor = bus.danger,
+                errorSupportingTextColor = bus.danger,
+                errorCursorColor = bus.danger,
             ),
         )
         Spacer(modifier = Modifier.height(16.dp))
         BusButton(
             text = stringResource(R.string.bus_number_confirm),
             onClick = { number?.let(onConfirm) },
-            enabled = number != null,
+            enabled = number != null && !isTaken && !isChecking,
         )
     }
 }

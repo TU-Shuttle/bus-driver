@@ -14,4 +14,10 @@ data class HomeUiState(
     val direction: ShuttleDirection? = null,
     /** 기사가 정한 호차 번호. 정하기 전엔 운행을 시작할 수 없다. */
     val busNumber: Int? = null,
+    /** 번호 입력 창에서 서버에 확인하는 중. */
+    val isCheckingNumber: Boolean = false,
+    /** 다른 기사가 운행 중이라 쓸 수 없는 번호(입력 창에 알림). */
+    val takenNumber: Int? = null,
+    /** 운행 중 다른 기사와 번호가 겹쳐 운행을 멈춘 경우 그 번호(시트에 알림). */
+    val stoppedForDuplicate: Int? = null,
 )

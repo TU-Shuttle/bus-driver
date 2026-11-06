@@ -2,6 +2,7 @@ package com.tukorea.driver.data.websocket
 
 import android.util.Log
 import com.google.gson.Gson
+import com.tukorea.driver.data.device.DeviceIdStore
 import com.tukorea.driver.data.network.NetworkMonitor
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.model.WebSocketConnectionState
@@ -11,7 +12,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -42,6 +46,7 @@ class WebSocketDataSource
         private val gson: Gson,
         private val config: WebSocketConfig,
         private val networkMonitor: NetworkMonitor,
+        private val deviceIdStore: DeviceIdStore,
     ) {
         private var webSocket: WebSocket? = null
         private val locationQueue = LocationQueue()
@@ -51,12 +56,17 @@ class WebSocketDataSource
         private var reconnectAttempts = 0
         private var isManualDisconnect = false
 
+        /** 서버가 "다른 기사가 이 번호로 운행 중"이라며 거절한 버스 id. */
+        private val _busNumberTaken = MutableSharedFlow<String>(extraBufferCapacity = 4)
+        val busNumberTaken: SharedFlow<String> = _busNumberTaken.asSharedFlow()
+
         private val _connectionState = MutableStateFlow<WebSocketConnectionState>(WebSocketConnectionState.Disconnected)
         val connectionState: StateFlow<WebSocketConnectionState> = _connectionState.asStateFlow()
 
         private companion object {
             private const val TAG = "WebSocketDataSource"
             private const val DRIVER_TOKEN_HEADER = "X-Driver-Token"
+            private const val CODE_BUS_NUMBER_TAKEN = "BUS_NUMBER_TAKEN"
         }
 
         init {
@@ -133,6 +143,7 @@ class WebSocketDataSource
                 accuracy = location.accuracy,
                 status = status,
                 direction = direction,
+                deviceId = deviceIdStore.id,
             )
 
             val json = gson.toJson(request)
@@ -272,6 +283,10 @@ class WebSocketDataSource
                     // 서버는 잘못된 위치 메시지에 {"error":"..."} 로 응답합니다(연결은 유지됨).
                     if (text.contains("\"error\"")) {
                         Log.w(TAG, "서버가 위치 메시지를 거절했습니다: $text")
+                        val rejection = runCatching { gson.fromJson(text, Rejection::class.java) }.getOrNull()
+                        if (rejection?.code == CODE_BUS_NUMBER_TAKEN && rejection.id != null) {
+                            _busNumberTaken.tryEmit(rejection.id)
+                        }
                     } else {
                         Log.d(TAG, "WebSocket 메시지 수신: $text")
                     }
@@ -312,6 +327,9 @@ class WebSocketDataSource
             locationQueue.clear()
         }
 
+        /** 서버의 거절 응답 {"error","code","id"}. */
+        private data class Rejection(val error: String?, val code: String?, val id: String?)
+
         /**
          * 서버로 전송할 위치 업데이트 요청 DTO
          */
@@ -323,5 +341,6 @@ class WebSocketDataSource
             val status: String,
             /** 고른 노선이 없으면 null(Gson이 필드를 빼고 보낸다). */
             val direction: String?,
+            val deviceId: String,
         )
     }

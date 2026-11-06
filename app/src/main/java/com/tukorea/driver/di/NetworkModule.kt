@@ -2,6 +2,7 @@ package com.tukorea.driver.di
 
 import android.content.Context
 import com.google.gson.Gson
+import com.tukorea.driver.data.device.DeviceIdStore
 import com.google.gson.GsonBuilder
 import com.tukorea.driver.BuildConfig
 import com.tukorea.driver.data.api.ApiService
@@ -69,5 +70,6 @@ object NetworkModule {
         gson: Gson,
         config: WebSocketConfig,
         networkMonitor: NetworkMonitor,
-    ): WebSocketDataSource = WebSocketDataSource(okHttpClient, gson, config, networkMonitor)
+        deviceIdStore: DeviceIdStore,
+    ): WebSocketDataSource = WebSocketDataSource(okHttpClient, gson, config, networkMonitor, deviceIdStore)
 }
