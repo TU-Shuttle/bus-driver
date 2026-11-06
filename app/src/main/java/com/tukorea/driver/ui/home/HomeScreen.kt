@@ -37,7 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.rememberPermissionState
+import android.os.Build
 import com.naver.maps.map.LocationTrackingMode
 import com.naver.maps.map.NaverMap
 import com.tukorea.driver.R
@@ -96,8 +99,20 @@ fun DriverHomeRoute(
     val locationPermissions = rememberMultiplePermissionsState(
         listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
     )
+    // 운행 중 알림 권한(Android 13+). 거절해도 운행은 되지만 알림창에 운행 중 표시가 안 뜬다.
+    val notificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        null
+    }
     LaunchedEffect(Unit) {
         if (!locationPermissions.allPermissionsGranted) locationPermissions.launchMultiplePermissionRequest()
+    }
+    // 위치 권한 창이 닫힌 뒤에 묻는다(권한 창은 한 번에 하나만 뜬다).
+    LaunchedEffect(locationPermissions.allPermissionsGranted) {
+        if (locationPermissions.allPermissionsGranted && notificationPermission?.status?.isGranted == false) {
+            notificationPermission.launchPermissionRequest()
+        }
     }
     LaunchedEffect(locationPermissions.allPermissionsGranted) {
         if (locationPermissions.allPermissionsGranted) {

@@ -15,6 +15,9 @@ constructor() {
     private val _drivingStatus = kotlinx.coroutines.flow.MutableStateFlow(DrivingStatus.Stop)
     val drivingStatus: Flow<DrivingStatus> = _drivingStatus
 
+    /** 지금 운행 상태(운행 서비스가 위치를 보낼지 정할 때 쓴다). */
+    val current: DrivingStatus get() = _drivingStatus.value
+
     /**
      * 운행 상태를 업데이트합니다.
      */

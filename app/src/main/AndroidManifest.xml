@@ -11,6 +11,8 @@
     <!-- Foreground Service 권한 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Android 13+: 운행 중 알림을 보이려면 필요하다(없으면 알림창에 안 뜬다). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- 네트워크 상태 확인 권한 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

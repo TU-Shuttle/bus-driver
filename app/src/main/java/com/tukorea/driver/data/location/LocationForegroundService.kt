@@ -19,7 +19,15 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.tukorea.driver.R
+import com.tukorea.driver.domain.model.DrivingStatus
+import com.tukorea.driver.domain.repository.BusNumberRepository
+import com.tukorea.driver.domain.repository.RouteRepository
+import com.tukorea.driver.domain.usecase.GetBusIdUseCase
+import com.tukorea.driver.domain.usecase.GetDrivingStatusUseCase
+import com.tukorea.driver.domain.usecase.SendLocationUseCase
 import com.tukorea.driver.ui.main.MainActivity
+import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,6 +35,21 @@ import kotlinx.coroutines.flow.asSharedFlow
 
 @AndroidEntryPoint
 class LocationForegroundService : Service() {
+
+    @Inject
+    lateinit var busNumbers: BusNumberRepository
+
+    @Inject
+    lateinit var drivingStatus: GetDrivingStatusUseCase
+
+    @Inject
+    lateinit var getBusId: GetBusIdUseCase
+
+    @Inject
+    lateinit var routes: RouteRepository
+
+    @Inject
+    lateinit var sendLocation: SendLocationUseCase
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationCallback: LocationCallback? = null
@@ -59,8 +82,13 @@ class LocationForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Service 시작")
         startForeground(NOTIFICATION_ID, createNotification())
-        startLocationUpdates()
-        return START_STICKY // 서비스가 종료되어도 재시작
+        // 시스템이 앱을 정리한 뒤 다시 살린 경우엔 운행 상태가 사라져 있으므로 알림만 남기지 않고 끝낸다.
+        if (drivingStatus.current == DrivingStatus.Stop) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (locationCallback == null) startLocationUpdates()
+        return START_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -79,10 +107,10 @@ class LocationForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "위치 추적 서비스",
+                getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "버스 위치를 서버로 전송하기 위한 위치 추적 서비스"
+                description = getString(R.string.notification_channel_description)
             }
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
@@ -102,9 +130,14 @@ class LocationForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("버스 위치 추적 중")
-            .setContentText("위치를 서버로 전송하고 있습니다")
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setContentTitle(
+                busNumbers.number.value?.let { getString(R.string.notification_title, it) }
+                    ?: getString(R.string.notification_title_no_number),
+            )
+            .setContentText(getString(R.string.notification_body))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(getString(R.string.notification_body)))
+            .setSmallIcon(R.drawable.ic_notification_bus)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
@@ -149,6 +182,7 @@ class LocationForegroundService : Service() {
                             "위치 업데이트 (Foreground Service): lat=${mapLocation.latitude}, lng=${mapLocation.longitude}",
                         )
                         _locationFlow.tryEmit(mapLocation)
+                        sendToServer(mapLocation)
                     }
                 }
             }
@@ -164,6 +198,16 @@ class LocationForegroundService : Service() {
             Log.e(TAG, "위치 권한 오류", e)
             stopSelf()
         }
+    }
+
+    /**
+     * 운행·대기 중이면 위치를 서버로 보낸다. 화면(Activity)이 닫혀도 운행 중엔 서비스가 계속 보내도록 여기서 맡는다.
+     */
+    private fun sendToServer(location: com.tukorea.driver.domain.model.MapLocation) {
+        val status = drivingStatus.current
+        if (status == DrivingStatus.Stop) return
+        val busId = getBusId() ?: return
+        sendLocation(busId, location, status.toServerString(), routes.selectedDirection.value?.name)
     }
 
     /**

@@ -77,8 +77,11 @@ class WebSocketDataSource
          * WebSocket 연결을 시작합니다.
          */
         fun connect() {
-            if (webSocket != null && _connectionState.value == WebSocketConnectionState.Connected) {
-                Log.d(TAG, "WebSocket이 이미 연결되어 있습니다.")
+            // 연결 중인 걸 끊고 다시 시작하면 서로의 종료 신호가 상태를 덮어쓴다. 연결됐거나 연결 중이면 그대로 둔다.
+            val state = _connectionState.value
+            if (webSocket != null &&
+                (state == WebSocketConnectionState.Connected || state == WebSocketConnectionState.Connecting)
+            ) {
                 return
             }
 
@@ -95,8 +98,9 @@ class WebSocketDataSource
             isManualDisconnect = true
             reconnectJob?.cancel()
             reconnectJob = null
-            webSocket?.close(1000, "정상 종료")
+            val socket = webSocket
             webSocket = null
+            socket?.close(1000, "정상 종료")
             _connectionState.value = WebSocketConnectionState.Disconnected
         }
 
@@ -174,10 +178,10 @@ class WebSocketDataSource
                 return
             }
 
-            if (webSocket != null) {
+            webSocket?.let { old ->
                 Log.d(TAG, "기존 WebSocket 연결을 정리합니다.")
-                webSocket?.close(1000, "재연결")
                 webSocket = null
+                old.close(1000, "재연결")
             }
 
             Log.d(TAG, "WebSocket 연결 시도: ${config.url} (시도 횟수: ${reconnectAttempts + 1})")
@@ -256,7 +260,9 @@ class WebSocketDataSource
                         connect()
                     } else if (!isConnected) {
                         Log.d(TAG, "네트워크 연결 끊김: WebSocket 연결 종료")
-                        webSocket?.close(1000, "네트워크 연결 끊김")
+                        val socket = webSocket
+                        webSocket = null
+                        socket?.close(1000, "네트워크 연결 끊김")
                         _connectionState.value = WebSocketConnectionState.Disconnected
                     }
                 }
@@ -269,6 +275,10 @@ class WebSocketDataSource
         private fun createWebSocketListener(): WebSocketListener =
             object : WebSocketListener() {
                 override fun onOpen(webSocket: WebSocket, response: Response) {
+                    if (isStale(webSocket)) {
+                        webSocket.close(1000, "이전 연결")
+                        return
+                    }
                     Log.d(TAG, "WebSocket 연결 성공")
                     reconnectAttempts = 0
                     reconnectJob?.cancel()
@@ -293,11 +303,13 @@ class WebSocketDataSource
                 }
 
                 override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    if (isStale(webSocket)) return
                     Log.d(TAG, "WebSocket 연결 종료 중: code=$code, reason=$reason")
                     _connectionState.value = WebSocketConnectionState.Disconnecting
                 }
 
                 override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                    if (isStale(webSocket)) return
                     Log.d(TAG, "WebSocket 연결 종료됨: code=$code, reason=$reason")
                     _connectionState.value = WebSocketConnectionState.Disconnected
 
@@ -308,6 +320,7 @@ class WebSocketDataSource
                 }
 
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    if (isStale(webSocket)) return
                     Log.e(TAG, "WebSocket 연결 실패", t)
                     _connectionState.value = WebSocketConnectionState.Disconnected
 
@@ -317,6 +330,9 @@ class WebSocketDataSource
                     }
                 }
             }
+
+        /** 이미 정리하고 새로 연 연결의 늦은 콜백인지. 이런 콜백이 지금 연결 상태를 덮어쓰면 안 된다. */
+        private fun isStale(socket: WebSocket): Boolean = socket !== webSocket
 
         /**
          * 리소스를 정리합니다.
