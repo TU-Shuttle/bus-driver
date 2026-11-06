@@ -63,8 +63,8 @@ class MapRepositoryImpl
         /**
          * WebSocketDataSource를 통해 위치를 서버로 전송합니다.
          */
-        override fun sendLocation(busId: String, location: MapLocation, status: String) {
-            webSocketDataSource.sendLocation(busId, location, status)
+        override fun sendLocation(busId: String, location: MapLocation, status: String, direction: String?) {
+            webSocketDataSource.sendLocation(busId, location, status, direction)
         }
 
         /**

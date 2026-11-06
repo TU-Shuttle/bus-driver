@@ -179,4 +179,22 @@
     <string name="driver_link_connected">위치를 보내고 있어요</string>
     <string name="driver_link_connecting">서버에 연결하는 중이에요</string>
     <string name="driver_link_disconnected">서버 연결이 끊겼어요. 다시 연결하는 중이에요</string>
+    <!-- 운행 노선 -->
+    <string name="stop_jeongwang_station">정왕역</string>
+    <string name="stop_campus1">본교</string>
+    <string name="stop_campus1_west_gate">본교 서문</string>
+    <string name="stop_campus2">제2캠퍼스</string>
+    <string name="stop_oido_station">오이도역</string>
+    <string name="route_label">노선</string>
+    <string name="route_choose">노선을 골라 주세요</string>
+    <string name="route_change">변경</string>
+    <string name="route_picker_title">어느 노선을 운행하나요?</string>
+    <string name="route_picker_body">학생 앱에 이 노선의 버스로 보여요. 종점에서 돌아갈 땐 반대 방향으로 바꿔 주세요.</string>
+    <string name="route_next_stop">다음 정류장 %1$s</string>
+    <string name="route_next_stop_distance">다음 정류장 %1$s · %2$s</string>
+    <string name="route_arrived">종점 %1$s에 도착했어요</string>
+    <string name="route_off">노선을 벗어나 있어요</string>
+    <string name="distance_meters">%1$dm</string>
+    <string name="distance_km">%1$.1fkm</string>
+    <string name="driver_start_needs_route">운행할 노선을 먼저 골라 주세요.</string>
 </resources>

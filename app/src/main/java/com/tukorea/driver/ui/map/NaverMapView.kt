@@ -35,11 +35,25 @@ import com.naver.maps.map.LocationTrackingMode
 import com.naver.maps.map.MapView
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.util.FusedLocationSource
+import android.content.Context
+import android.graphics.PointF
+import androidx.annotation.DrawableRes
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import com.naver.maps.map.overlay.Marker
+import com.naver.maps.map.overlay.OverlayImage
+import com.naver.maps.map.overlay.PathOverlay
+import com.tukorea.driver.R
 import com.tukorea.driver.domain.model.MapLocation
+import com.tukorea.driver.domain.model.ShuttleRoute
+import com.tukorea.driver.domain.model.ShuttleStop
 import com.tukorea.driver.domain.util.LocationUtils
 
 private const val CAMERA_ANIMATION_DURATION_MS = 500L
-private const val NAVIGATION_BAR_PADDING_DP = 80
 
 @Composable
 fun NaverMapView(
@@ -49,6 +63,8 @@ fun NaverMapView(
     onMapReady: () -> Unit = {},
     bottomPadding: Int = 0,
     onMapInitialized: ((NaverMap) -> Unit)? = null,
+    route: ShuttleRoute? = null,
+    stopCaption: @Composable (ShuttleStop) -> String = { "" },
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -72,6 +88,47 @@ fun NaverMapView(
 
     // 맵이 준비되었는지 여부
     var isMapReady by remember { mutableStateOf(false) }
+
+    // 고른 노선: 학생 앱과 같은 굵은 단색 선 + 정류장 마커
+    val density = LocalDensity.current
+    val routeLine = remember { PathOverlay() }
+    val stopMarkers = remember { mutableListOf<Marker>() }
+    val originIcon = remember { context.overlay(R.drawable.ic_map_stop_origin) }
+    val stopIcon = remember { context.overlay(R.drawable.ic_map_stop_destination) }
+    val captions = route?.direction?.stops.orEmpty().associateWith { stopCaption(it) }
+    LaunchedEffect(naverMap, route, isDarkTheme) {
+        val map = naverMap ?: return@LaunchedEffect
+        stopMarkers.forEach { it.map = null }
+        stopMarkers.clear()
+        val points = route?.points.orEmpty()
+        if (route == null || points.size < 2) {
+            routeLine.map = null
+            return@LaunchedEffect
+        }
+        val ink = (if (isDarkTheme) Color.White else Color.Black).toArgb()
+        val halo = (if (isDarkTheme) Color.Black else Color.White).toArgb()
+        routeLine.apply {
+            coords = points.map { LatLng(it.latitude, it.longitude) }
+            width = with(density) { 5.dp.roundToPx() }
+            outlineWidth = with(density) { 1.5.dp.roundToPx() }
+            color = ink
+            outlineColor = halo
+            this.map = map
+        }
+        route.direction.stops.forEachIndexed { index, stop ->
+            stopMarkers += Marker().apply {
+                position = LatLng(stop.point.latitude, stop.point.longitude)
+                icon = if (index == 0) originIcon else stopIcon
+                anchor = PointF(0.5f, 0.5f)
+                captionText = captions[stop].orEmpty()
+                captionTextSize = 14f
+                captionColor = ink
+                captionHaloColor = halo
+                isHideCollidedSymbols = true
+                this.map = map
+            }
+        }
+    }
 
     // 권한 상태 변경 시 LocationTrackingMode 업데이트
     LaunchedEffect(isLocationPermissionGranted, naverMap) {
@@ -190,11 +247,13 @@ fun NaverMapView(
                 // 다크 모드에서는 야간 지도로 전환
                 map.mapType = if (isDarkTheme) NaverMap.MapType.Navi else NaverMap.MapType.Basic
                 map.isNightModeEnabled = isDarkTheme
-                val density = view.context.resources.displayMetrics.density
-                val bottomPadding = (NAVIGATION_BAR_PADDING_DP * density).toInt() // 네비게이션 바 + 여유 공간
+                // 시트에 가려지는 만큼 지도 중심을 위로 올린다.
                 map.setContentPadding(0, 0, 0, bottomPadding)
             }
         },
         modifier = modifier,
     )
 }
+
+private fun Context.overlay(@DrawableRes id: Int): OverlayImage =
+    OverlayImage.fromBitmap(requireNotNull(ContextCompat.getDrawable(this, id)).toBitmap())

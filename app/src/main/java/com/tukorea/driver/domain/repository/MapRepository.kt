@@ -31,7 +31,7 @@ interface MapRepository {
      * @param location 위치 정보
      * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
      */
-    fun sendLocation(busId: String, location: MapLocation, status: String)
+    fun sendLocation(busId: String, location: MapLocation, status: String, direction: String?)
 
     /**
      * WebSocket 연결을 시작합니다.

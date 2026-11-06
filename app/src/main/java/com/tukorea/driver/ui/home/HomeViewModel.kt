@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tukorea.driver.data.location.LocationServiceManager
 import com.tukorea.driver.domain.model.DrivingStatus
+import com.tukorea.driver.domain.model.ShuttleDirection
+import com.tukorea.driver.domain.repository.RouteRepository
 import com.tukorea.driver.domain.usecase.GetDrivingStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,6 +26,7 @@ class HomeViewModel
 constructor(
     private val getDrivingStatusUseCase: GetDrivingStatusUseCase,
     private val locationServiceManager: LocationServiceManager,
+    private val routeRepository: RouteRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -47,6 +50,14 @@ constructor(
             }
             .launchIn(viewModelScope)
 
+        routeRepository.selectedDirection
+            .onEach { direction -> _uiState.value = _uiState.value.copy(direction = direction) }
+            .launchIn(viewModelScope)
+    }
+
+    /** 운행 노선을 고른다. 운행 중에 바꾸면(예: 종점에서 반대 방향으로) 바로 학생 앱에 반영된다. */
+    fun selectDirection(direction: ShuttleDirection) {
+        routeRepository.select(direction)
     }
 
 
@@ -56,6 +67,7 @@ constructor(
      * 운행을 시작합니다.
      */
     fun startDriving() {
+        if (_uiState.value.direction == null) return
         getDrivingStatusUseCase.updateStatus(DrivingStatus.Running)
     }
 
