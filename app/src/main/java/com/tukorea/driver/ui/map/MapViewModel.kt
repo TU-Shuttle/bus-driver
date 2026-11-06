@@ -3,23 +3,27 @@ package com.tukorea.driver.ui.map
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tukorea.driver.domain.model.GeoPoint
+import com.tukorea.driver.domain.repository.RouteRepository
 import com.tukorea.driver.domain.usecase.ConnectWebSocketUseCase
-import com.tukorea.driver.domain.usecase.DisconnectWebSocketUseCase
 import com.tukorea.driver.domain.usecase.GetBusIdUseCase
 import com.tukorea.driver.domain.usecase.GetCurrentLocationUseCase
-import com.tukorea.driver.domain.usecase.GetLocationUpdatesUseCase
-import com.tukorea.driver.domain.util.Result
-import com.tukorea.driver.domain.usecase.ObserveWebSocketConnectionStateUseCase
-import com.tukorea.driver.domain.model.DrivingStatus
 import com.tukorea.driver.domain.usecase.GetDrivingStatusUseCase
+import com.tukorea.driver.domain.usecase.GetLocationUpdatesUseCase
+import com.tukorea.driver.domain.usecase.ObserveWebSocketConnectionStateUseCase
 import com.tukorea.driver.domain.usecase.SendLocationUseCase
+import com.tukorea.driver.domain.usecase.TrackRouteProgressUseCase
+import com.tukorea.driver.domain.util.Result
 import com.tukorea.driver.ui.common.ErrorMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,10 +43,11 @@ class MapViewModel
         private val getLocationUpdatesUseCase: GetLocationUpdatesUseCase,
         private val sendLocationUseCase: SendLocationUseCase,
         private val connectWebSocketUseCase: ConnectWebSocketUseCase,
-        private val disconnectWebSocketUseCase: DisconnectWebSocketUseCase,
         private val observeWebSocketConnectionStateUseCase: ObserveWebSocketConnectionStateUseCase,
         private val getDrivingStatusUseCase: GetDrivingStatusUseCase,
         private val getBusIdUseCase: GetBusIdUseCase,
+        private val routeRepository: RouteRepository,
+        private val trackRouteProgress: TrackRouteProgressUseCase,
         private val errorMapper: ErrorMapper,
     ) : ViewModel() {
         private val _state = MutableStateFlow(MapUiState())
@@ -50,39 +55,18 @@ class MapViewModel
 
         private companion object {
             private const val TAG = "MapViewModel"
-            @Volatile
-            private var isLocationUpdatesStarted = false
-            @Volatile
-            private var isWebSocketConnected = false
         }
 
+        /** 지도에 내 위치를 보여 주기 위한 수신. 서버 전송은 운행 서비스가 맡는다. */
+        private var locationJob: Job? = null
+
         init {
-            Log.d(TAG, "초기화: 위치 권한을 확인합니다.")
             checkLocationPermission()
-            
-            // WebSocket 연결은 단일 인스턴스에서만 시작 (중복 방지)
-            synchronized(this) {
-                if (!isWebSocketConnected) {
-                    isWebSocketConnected = true
-                    connectWebSocket()
-                    observeWebSocketState()
-                } else {
-                    Log.d(TAG, "WebSocket 연결이 이미 시작되어 있습니다. 중복 연결을 건너뜁니다.")
-                    // 연결 상태만 관찰
-                    observeWebSocketState()
-                }
-            }
-            
-            // 위치 업데이트는 단일 인스턴스에서만 시작 (중복 방지)
-            synchronized(this) {
-                if (!isLocationUpdatesStarted) {
-                    isLocationUpdatesStarted = true
-                    startLocationUpdates()
-                    observeDrivingStatusChanges()
-                } else {
-                    Log.d(TAG, "위치 업데이트가 이미 시작되어 있습니다. 중복 시작을 건너뜁니다.")
-                }
-            }
+            observeRouteProgress()
+            connectWebSocket()
+            observeWebSocketState()
+            startLocationUpdates()
+            observeDrivingStatusChanges()
         }
 
         override fun onCleared() {
@@ -90,6 +74,25 @@ class MapViewModel
             Log.d(TAG, "ViewModel 종료")
             // WebSocket 연결과 위치 업데이트는 다른 인스턴스가 사용할 수 있으므로
             // 여기서는 disconnect하지 않음 (Application 생명주기와 함께 관리)
+        }
+
+        /** 고른 노선과 현재 위치로 지도 경로와 다음 정류장을 갱신한다. */
+        private fun observeRouteProgress() {
+            combine(
+                _state.map { it.currentLocation }.distinctUntilChanged(),
+                routeRepository.selectedDirection,
+            ) { location, direction ->
+                val route = direction?.let(routeRepository::routeOf)
+                val progress =
+                    if (route != null && location != null) {
+                        trackRouteProgress(route, GeoPoint(location.latitude, location.longitude))
+                    } else {
+                        null
+                    }
+                route to progress
+            }
+                .onEach { (route, progress) -> _state.value = _state.value.copy(route = route, progress = progress) }
+                .launchIn(viewModelScope)
         }
 
         /**
@@ -179,41 +182,31 @@ class MapViewModel
                 return
             }
 
-            Log.d(TAG, "백그라운드 위치 업데이트 시작")
-            getLocationUpdatesUseCase()
-                .combine(getDrivingStatusUseCase.drivingStatus) { location, drivingStatus ->
-                    Pair(location, drivingStatus)
-                }
-                .onEach { (location, drivingStatus) ->
-                    Log.d(
-                        TAG,
-                        "위치 업데이트 수신: 위도=${location.latitude}, 경도=${location.longitude}, 운행상태=$drivingStatus",
-                    )
-                    _state.value =
-                        _state.value.copy(
-                            currentLocation = location,
-                            isLoading = false,
-                            error = null,
+            if (locationJob?.isActive == true) return
+            Log.d(TAG, "지도용 위치 업데이트 시작")
+            locationJob =
+                getLocationUpdatesUseCase()
+                    .onEach { location ->
+                        Log.d(
+                            TAG,
+                            "위치 업데이트 수신: 위도=${location.latitude}, 경도=${location.longitude}",
                         )
-
-                    // 운행/대기 중일 때만 위치를 서버로 전송
-                    if (drivingStatus == DrivingStatus.Running || drivingStatus == DrivingStatus.Waiting) {
-                        val busId = getBusIdUseCase()
-                        val statusString = drivingStatus.toServerString()
-                        Log.d(TAG, "운행 상태: $drivingStatus - 위치 전송")
-                        sendLocationUseCase(busId, location, statusString)
-                    } else {
-                        Log.d(TAG, "운행 종료 상태 - 위치 전송 안 함")
+                        _state.value =
+                            _state.value.copy(
+                                currentLocation = location,
+                                isLoading = false,
+                                error = null,
+                            )
                     }
-                }
-                .catch { exception ->
-                    Log.e(TAG, "위치 업데이트 중 오류 발생", exception)
-                    val message = errorMapper.run {
-                        exception.toUserMessage()
+                    .catch { exception ->
+                        Log.e(TAG, "위치 업데이트 중 오류 발생", exception)
+                        val message =
+                            errorMapper.run {
+                                exception.toUserMessage()
+                            }
+                        _state.value = _state.value.copy(error = message)
                     }
-                    _state.value = _state.value.copy(error = message)
-                }
-                .launchIn(viewModelScope)
+                    .launchIn(viewModelScope)
         }
 
         /**
@@ -222,13 +215,19 @@ class MapViewModel
          */
         private fun observeDrivingStatusChanges() {
             getDrivingStatusUseCase.drivingStatus
+                .combine(routeRepository.selectedDirection) { drivingStatus, _ -> drivingStatus }
                 .onEach { drivingStatus ->
-                    // 현재 위치가 있으면 즉시 상태와 함께 전송
+                    // 노선을 바꿔도 학생 앱에 바로 반영되도록 즉시 보낸다. 현재 위치가 있으면 즉시 상태와 함께 전송
                     _state.value.currentLocation?.let { location ->
-                        val busId = getBusIdUseCase()
+                        val busId = getBusIdUseCase() ?: return@let
                         val statusString = drivingStatus.toServerString()
                         Log.d(TAG, "운행 상태 변경: $drivingStatus - 즉시 전송")
-                        sendLocationUseCase(busId, location, statusString)
+                        sendLocationUseCase(
+                            busId,
+                            location,
+                            statusString,
+                            routeRepository.selectedDirection.value?.name,
+                        )
                     }
                 }
                 .launchIn(viewModelScope)

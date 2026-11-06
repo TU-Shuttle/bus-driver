@@ -17,8 +17,13 @@ class LocationQueue {
      * @param location 위치 정보
      * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
      */
-    fun enqueue(busId: String, location: MapLocation, status: String) {
-        queue.offer(QueuedLocation(busId, location, status))
+    fun enqueue(
+        busId: String,
+        location: MapLocation,
+        status: String,
+        direction: String?,
+    ) {
+        queue.offer(QueuedLocation(busId, location, status, direction))
     }
 
     /**
@@ -48,5 +53,6 @@ class LocationQueue {
         val busId: String,
         val location: MapLocation,
         val status: String,
+        val direction: String?,
     )
 }

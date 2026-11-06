@@ -35,23 +35,26 @@ complexity:
   ComplexCondition:
     active: true
     threshold: 4
+  # Compose 화면 함수는 UI 트리를 그대로 적어 길고 분기가 많아지기 쉽다. 화면 함수는 이 규칙에서 뺀다.
   CyclomaticComplexMethod:
     active: true
     threshold: 10
-    excludes: ['**/ui/map/MapScreen.kt']
+    ignoreAnnotated: ['Composable']
   CognitiveComplexMethod:
     active: true
     threshold: 15
-    excludes: ['**/ui/map/MapScreen.kt']
+    ignoreAnnotated: ['Composable']
   LongMethod:
     active: true
     threshold: 60
-    excludes: ['**/ui/map/MapScreen.kt']
+    ignoreAnnotated: ['Composable']
+  # 화면 함수는 상태와 콜백을 파라미터로 받고(상태 끌어올리기), Hilt 생성자는 주입받는 의존성이 많다.
   LongParameterList:
     active: true
     functionThreshold: 6
     constructorThreshold: 6
     ignoreDefaultParameters: true
+    ignoreAnnotated: ['Composable', 'Inject']
   NestedBlockDepth:
     active: true
     threshold: 4

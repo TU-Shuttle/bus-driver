@@ -10,6 +10,7 @@ sealed class MapError {
     object PermissionDenied : MapError()
 
     object NetworkError : MapError()
+
     object Timeout : MapError()
 
     data class Unknown(val errorMessage: String?) : MapError()

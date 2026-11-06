@@ -25,7 +25,10 @@ if (envFile.exists()) {
     }
 }
 
-fun getEnv(key: String, defaultValue: String = ""): String {
+fun getEnv(
+    key: String,
+    defaultValue: String = "",
+): String {
     return envVars[key] ?: System.getenv(key) ?: defaultValue
 }
 
@@ -58,9 +61,10 @@ fun generateNetworkSecurityConfig(): String {
     val isHttps = baseUrl.startsWith("https://") || wsUrl.startsWith("wss://")
     val cleartextPermitted = !isHttps
 
-    val domainConfigs = domains.joinToString("\n        ") { domain ->
-        "<domain includeSubdomains=\"true\">$domain</domain>"
-    }
+    val domainConfigs =
+        domains.joinToString("\n        ") { domain ->
+            "<domain includeSubdomains=\"true\">$domain</domain>"
+        }
 
     return """<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
@@ -83,7 +87,7 @@ android {
         minSdk = 25
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["naverMapClientId"] = getEnv("NAVER_MAP_CLIENT_ID")
@@ -93,11 +97,13 @@ android {
         debug {
             buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
             buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL")}\"")
+            buildConfigField("String", "DRIVER_TOKEN", "\"${getEnv("DRIVER_TOKEN")}\"")
         }
         release {
             isMinifyEnabled = false
             buildConfigField("String", "BASE_URL", "\"${getEnv("BASE_URL")}\"")
             buildConfigField("String", "WS_URL", "\"${getEnv("WS_URL")}\"")
+            buildConfigField("String", "DRIVER_TOKEN", "\"${getEnv("DRIVER_TOKEN")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

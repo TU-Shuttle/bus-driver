@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.tukorea.driver.BuildConfig
 import com.tukorea.driver.data.api.ApiService
+import com.tukorea.driver.data.device.DeviceIdStore
 import com.tukorea.driver.data.network.NetworkMonitor
 import com.tukorea.driver.data.websocket.WebSocketConfig
 import com.tukorea.driver.data.websocket.WebSocketDataSource
@@ -22,7 +23,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
     @Provides
     @Singleton
     fun provideOkHttp(): OkHttpClient {
@@ -60,7 +60,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideWebSocketConfig(): WebSocketConfig = WebSocketConfig(url = BuildConfig.WS_URL)
+    fun provideWebSocketConfig(): WebSocketConfig =
+        WebSocketConfig(url = BuildConfig.WS_URL, driverToken = BuildConfig.DRIVER_TOKEN)
 
     @Provides
     @Singleton
@@ -69,5 +70,6 @@ object NetworkModule {
         gson: Gson,
         config: WebSocketConfig,
         networkMonitor: NetworkMonitor,
-    ): WebSocketDataSource = WebSocketDataSource(okHttpClient, gson, config, networkMonitor)
+        deviceIdStore: DeviceIdStore,
+    ): WebSocketDataSource = WebSocketDataSource(okHttpClient, gson, config, networkMonitor, deviceIdStore)
 }

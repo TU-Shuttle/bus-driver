@@ -16,6 +16,5 @@ class ObserveWebSocketConnectionStateUseCase
         /**
          * WebSocket 연결 상태를 관찰하는 Flow를 반환합니다.
          */
-        operator fun invoke(): StateFlow<WebSocketConnectionState> =
-            repository.observeWebSocketConnectionState()
+        operator fun invoke(): StateFlow<WebSocketConnectionState> = repository.observeWebSocketConnectionState()
     }

@@ -1,21 +1,20 @@
 package com.tukorea.driver.domain.usecase
 
+import com.tukorea.driver.domain.repository.BusNumberRepository
 import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
- * 현재 버스/드라이버 ID를 제공하는 UseCase.
+ * 서버에 보내는 버스 id. 기사가 정한 호차 번호로 만든다(3호차 → "bus-3").
+ * 학생 앱은 이 형식에서 호차 번호를 읽어 보여 준다. 번호를 정하기 전이면 null.
  */
-@Singleton
 class GetBusIdUseCase
     @Inject
-    constructor() {
-        /**
-         * 현재 버스/드라이버 ID를 반환합니다.
-         * @return 버스/드라이버 ID
-         */
-        operator fun invoke(): String {
-            // Note: 실제 구현 시 사용자 인증 정보나 설정에서 가져와야 합니다.
-            return "bus-001"
+    constructor(
+        private val busNumbers: BusNumberRepository,
+    ) {
+        operator fun invoke(): String? = busNumbers.number.value?.let(::busIdOf)
+
+        companion object {
+            fun busIdOf(number: Int): String = "bus-$number"
         }
     }
