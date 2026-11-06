@@ -46,4 +46,3 @@ val DarkGreen50 = Color(0xFF12302A)
 val DarkOrange50 = Color(0xFF3A2E17)
 val DarkRed50 = Color(0xFF3A1D22)
 val DarkBlue50 = Color(0xFF1B2F4D)
-

@@ -32,8 +32,7 @@ object MapModule {
     fun provideMapRepository(
         locationDataSource: LocationDataSource,
         webSocketDataSource: WebSocketDataSource,
-    ): MapRepository =
-        MapRepositoryImpl(locationDataSource, webSocketDataSource)
+    ): MapRepository = MapRepositoryImpl(locationDataSource, webSocketDataSource)
 
     @Provides
     @Singleton
@@ -47,8 +46,7 @@ object MapModule {
 
     @Provides
     @Singleton
-    fun provideSendLocationUseCase(repository: MapRepository): SendLocationUseCase =
-        SendLocationUseCase(repository)
+    fun provideSendLocationUseCase(repository: MapRepository): SendLocationUseCase = SendLocationUseCase(repository)
 
     @Provides
     @Singleton
@@ -62,6 +60,7 @@ object MapModule {
 
     @Provides
     @Singleton
-    fun provideObserveWebSocketConnectionStateUseCase(repository: MapRepository): ObserveWebSocketConnectionStateUseCase =
-        ObserveWebSocketConnectionStateUseCase(repository)
+    fun provideObserveWebSocketConnectionStateUseCase(
+        repository: MapRepository,
+    ): ObserveWebSocketConnectionStateUseCase = ObserveWebSocketConnectionStateUseCase(repository)
 }

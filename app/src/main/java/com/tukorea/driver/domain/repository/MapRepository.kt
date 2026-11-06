@@ -1,8 +1,8 @@
 package com.tukorea.driver.domain.repository
 
-import com.tukorea.driver.domain.util.MapResult
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.model.WebSocketConnectionState
+import com.tukorea.driver.domain.util.MapResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -31,7 +31,12 @@ interface MapRepository {
      * @param location 위치 정보
      * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
      */
-    fun sendLocation(busId: String, location: MapLocation, status: String, direction: String?)
+    fun sendLocation(
+        busId: String,
+        location: MapLocation,
+        status: String,
+        direction: String?,
+    )
 
     /**
      * WebSocket 연결을 시작합니다.

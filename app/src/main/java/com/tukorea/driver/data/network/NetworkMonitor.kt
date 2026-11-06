@@ -45,43 +45,44 @@ class NetworkMonitor
          * 네트워크 연결 상태 변화를 관찰하는 Flow를 반환합니다.
          * @return 네트워크 연결 상태 (true: 연결됨, false: 연결 안 됨)
          */
-        fun observeNetworkState(): Flow<Boolean> = callbackFlow {
-            val callback =
-                object : ConnectivityManager.NetworkCallback() {
-                    override fun onAvailable(network: Network) {
-                        Log.d(TAG, "네트워크 연결됨")
-                        trySend(true)
+        fun observeNetworkState(): Flow<Boolean> =
+            callbackFlow {
+                val callback =
+                    object : ConnectivityManager.NetworkCallback() {
+                        override fun onAvailable(network: Network) {
+                            Log.d(TAG, "네트워크 연결됨")
+                            trySend(true)
+                        }
+
+                        override fun onLost(network: Network) {
+                            Log.d(TAG, "네트워크 연결 끊김")
+                            trySend(false)
+                        }
+
+                        override fun onCapabilitiesChanged(
+                            network: Network,
+                            networkCapabilities: NetworkCapabilities,
+                        ) {
+                            val isConnected =
+                                networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                                    networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                            Log.d(TAG, "네트워크 상태 변경: 연결=$isConnected")
+                            trySend(isConnected)
+                        }
                     }
 
-                    override fun onLost(network: Network) {
-                        Log.d(TAG, "네트워크 연결 끊김")
-                        trySend(false)
-                    }
+                val request =
+                    NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build()
 
-                    override fun onCapabilitiesChanged(
-                        network: Network,
-                        networkCapabilities: NetworkCapabilities,
-                    ) {
-                        val isConnected =
-                            networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-                                networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-                        Log.d(TAG, "네트워크 상태 변경: 연결=$isConnected")
-                        trySend(isConnected)
-                    }
+                connectivityManager.registerNetworkCallback(request, callback)
+
+                // 초기 상태 전송
+                trySend(isNetworkAvailable())
+
+                awaitClose {
+                    connectivityManager.unregisterNetworkCallback(callback)
                 }
-
-            val request =
-                NetworkRequest.Builder()
-                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                    .build()
-
-            connectivityManager.registerNetworkCallback(request, callback)
-
-            // 초기 상태 전송
-            trySend(isNetworkAvailable())
-
-            awaitClose {
-                connectivityManager.unregisterNetworkCallback(callback)
-            }
-        }.distinctUntilChanged()
+            }.distinctUntilChanged()
     }

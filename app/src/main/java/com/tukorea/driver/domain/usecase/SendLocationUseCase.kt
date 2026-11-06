@@ -19,7 +19,12 @@ class SendLocationUseCase
          * @param status 운행 상태 ("RUNNING", "WAITING", "STOP")
          * @param direction 기사가 고른 노선 코드. 고르지 않았으면 null
          */
-        operator fun invoke(busId: String, location: MapLocation, status: String, direction: String?) {
+        operator fun invoke(
+            busId: String,
+            location: MapLocation,
+            status: String,
+            direction: String?,
+        ) {
             repository.sendLocation(busId, location, status, direction)
         }
     }

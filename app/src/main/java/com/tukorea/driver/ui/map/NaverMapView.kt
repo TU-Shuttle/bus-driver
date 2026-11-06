@@ -1,52 +1,40 @@
 package com.tukorea.driver.ui.map
 
-import android.Manifest
 import android.app.Activity
+import android.content.Context
+import android.graphics.PointF
 import android.os.Bundle
-import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.CameraAnimation
 import com.naver.maps.map.CameraUpdate
 import com.naver.maps.map.LocationTrackingMode
 import com.naver.maps.map.MapView
 import com.naver.maps.map.NaverMap
-import com.naver.maps.map.util.FusedLocationSource
-import android.content.Context
-import android.graphics.PointF
-import androidx.annotation.DrawableRes
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import com.naver.maps.map.overlay.Marker
 import com.naver.maps.map.overlay.OverlayImage
 import com.naver.maps.map.overlay.PathOverlay
+import com.naver.maps.map.util.FusedLocationSource
 import com.tukorea.driver.R
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.model.ShuttleRoute
@@ -54,6 +42,8 @@ import com.tukorea.driver.domain.model.ShuttleStop
 import com.tukorea.driver.domain.util.LocationUtils
 
 private const val CAMERA_ANIMATION_DURATION_MS = 500L
+private const val CENTER = 0.5f
+private const val STOP_CAPTION_SP = 14f
 
 @Composable
 fun NaverMapView(
@@ -116,17 +106,18 @@ fun NaverMapView(
             this.map = map
         }
         route.direction.stops.forEachIndexed { index, stop ->
-            stopMarkers += Marker().apply {
-                position = LatLng(stop.point.latitude, stop.point.longitude)
-                icon = if (index == 0) originIcon else stopIcon
-                anchor = PointF(0.5f, 0.5f)
-                captionText = captions[stop].orEmpty()
-                captionTextSize = 14f
-                captionColor = ink
-                captionHaloColor = halo
-                isHideCollidedSymbols = true
-                this.map = map
-            }
+            stopMarkers +=
+                Marker().apply {
+                    position = LatLng(stop.point.latitude, stop.point.longitude)
+                    icon = if (index == 0) originIcon else stopIcon
+                    anchor = PointF(CENTER, CENTER)
+                    captionText = captions[stop].orEmpty()
+                    captionTextSize = STOP_CAPTION_SP
+                    captionColor = ink
+                    captionHaloColor = halo
+                    isHideCollidedSymbols = true
+                    this.map = map
+                }
         }
     }
 
@@ -255,5 +246,6 @@ fun NaverMapView(
     )
 }
 
-private fun Context.overlay(@DrawableRes id: Int): OverlayImage =
-    OverlayImage.fromBitmap(requireNotNull(ContextCompat.getDrawable(this, id)).toBitmap())
+private fun Context.overlay(
+    @DrawableRes id: Int,
+): OverlayImage = OverlayImage.fromBitmap(requireNotNull(ContextCompat.getDrawable(this, id)).toBitmap())

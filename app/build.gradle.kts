@@ -25,7 +25,10 @@ if (envFile.exists()) {
     }
 }
 
-fun getEnv(key: String, defaultValue: String = ""): String {
+fun getEnv(
+    key: String,
+    defaultValue: String = "",
+): String {
     return envVars[key] ?: System.getenv(key) ?: defaultValue
 }
 
@@ -58,9 +61,10 @@ fun generateNetworkSecurityConfig(): String {
     val isHttps = baseUrl.startsWith("https://") || wsUrl.startsWith("wss://")
     val cleartextPermitted = !isHttps
 
-    val domainConfigs = domains.joinToString("\n        ") { domain ->
-        "<domain includeSubdomains=\"true\">$domain</domain>"
-    }
+    val domainConfigs =
+        domains.joinToString("\n        ") { domain ->
+            "<domain includeSubdomains=\"true\">$domain</domain>"
+        }
 
     return """<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>

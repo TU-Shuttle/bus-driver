@@ -1,15 +1,12 @@
 package com.tukorea.driver.data.repository
 
-import android.util.Log
 import com.tukorea.driver.data.location.LocationDataSource
 import com.tukorea.driver.data.location.LocationForegroundService
 import com.tukorea.driver.data.websocket.WebSocketDataSource
-import com.tukorea.driver.domain.error.MapError
 import com.tukorea.driver.domain.model.MapLocation
 import com.tukorea.driver.domain.repository.MapRepository
 import com.tukorea.driver.domain.util.MapResult
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,9 +18,6 @@ class MapRepositoryImpl
         private val locationDataSource: LocationDataSource,
         private val webSocketDataSource: WebSocketDataSource,
     ) : MapRepository {
-        private companion object {
-            private const val TAG = "MapRepositoryImpl"
-        }
         /**
          * LocationDataSource를 통해 현재 위치를 가져옵니다.
          */
@@ -59,7 +53,12 @@ class MapRepositoryImpl
         /**
          * WebSocketDataSource를 통해 위치를 서버로 전송합니다.
          */
-        override fun sendLocation(busId: String, location: MapLocation, status: String, direction: String?) {
+        override fun sendLocation(
+            busId: String,
+            location: MapLocation,
+            status: String,
+            direction: String?,
+        ) {
             webSocketDataSource.sendLocation(busId, location, status, direction)
         }
 
@@ -81,5 +80,4 @@ class MapRepositoryImpl
          * WebSocketDataSource를 통해 연결 상태를 관찰합니다.
          */
         override fun observeWebSocketConnectionState() = webSocketDataSource.connectionState
-
     }

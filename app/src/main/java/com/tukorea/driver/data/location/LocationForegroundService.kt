@@ -6,19 +6,19 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import com.tukorea.driver.R
 import com.tukorea.driver.domain.model.DrivingStatus
 import com.tukorea.driver.domain.repository.BusNumberRepository
@@ -27,15 +27,14 @@ import com.tukorea.driver.domain.usecase.GetBusIdUseCase
 import com.tukorea.driver.domain.usecase.GetDrivingStatusUseCase
 import com.tukorea.driver.domain.usecase.SendLocationUseCase
 import com.tukorea.driver.ui.main.MainActivity
-import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class LocationForegroundService : Service() {
-
     @Inject
     lateinit var busNumbers: BusNumberRepository
 
@@ -79,11 +78,15 @@ class LocationForegroundService : Service() {
         createNotificationChannel()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         Log.d(TAG, "Service 시작")
         startForeground(NOTIFICATION_ID, createNotification())
         // 시스템이 앱을 정리한 뒤 다시 살린 경우엔 운행 상태가 사라져 있으므로 알림만 남기지 않고 끝낸다.
-        if (drivingStatus.current == DrivingStatus.Stop) {
+        if (drivingStatus.current == DrivingStatus.STOP) {
             stopSelf()
             return START_NOT_STICKY
         }
@@ -105,13 +108,14 @@ class LocationForegroundService : Service() {
      */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_LOW,
-            ).apply {
-                description = getString(R.string.notification_channel_description)
-            }
+            val channel =
+                NotificationChannel(
+                    CHANNEL_ID,
+                    getString(R.string.notification_channel_name),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = getString(R.string.notification_channel_description)
+                }
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
         }
@@ -122,12 +126,13 @@ class LocationForegroundService : Service() {
      */
     private fun createNotification(): Notification {
         val intent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(
@@ -147,13 +152,14 @@ class LocationForegroundService : Service() {
      * 위치 업데이트 시작
      */
     private fun startLocationUpdates() {
-        val hasPermission = ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.ACCESS_FINE_LOCATION,
-        ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION,
-        ) == PackageManager.PERMISSION_GRANTED
+        val hasPermission =
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
 
         if (!hasPermission) {
             Log.w(TAG, "위치 권한이 없어 위치 업데이트를 시작할 수 없습니다.")
@@ -205,7 +211,7 @@ class LocationForegroundService : Service() {
      */
     private fun sendToServer(location: com.tukorea.driver.domain.model.MapLocation) {
         val status = drivingStatus.current
-        if (status == DrivingStatus.Stop) return
+        if (status == DrivingStatus.STOP) return
         val busId = getBusId() ?: return
         sendLocation(busId, location, status.toServerString(), routes.selectedDirection.value?.name)
     }

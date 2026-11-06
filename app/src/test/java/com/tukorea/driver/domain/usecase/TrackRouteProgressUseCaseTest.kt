@@ -10,14 +10,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrackRouteProgressUseCaseTest {
-
     private val track = TrackRouteProgressUseCase()
 
     // 정왕역 → 본교 서문 → 제2캠퍼스를 직선으로 잇는 단순 경로
-    private val via = ShuttleRoute(
-        ShuttleDirection.STATION_TO_CAMPUS2_VIA_CAMPUS1,
-        listOf(ShuttleStop.JEONGWANG_STATION.point, ShuttleStop.CAMPUS1_WEST_GATE.point, ShuttleStop.CAMPUS2.point),
-    )
+    private val via =
+        ShuttleRoute(
+            ShuttleDirection.STATION_TO_CAMPUS2_VIA_CAMPUS1,
+            listOf(ShuttleStop.JEONGWANG_STATION.point, ShuttleStop.CAMPUS1_WEST_GATE.point, ShuttleStop.CAMPUS2.point),
+        )
 
     @Test
     fun `출발 직후엔 다음 정류장이 경유지다`() {

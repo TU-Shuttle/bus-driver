@@ -11,11 +11,11 @@ data class GeoPoint(val latitude: Double, val longitude: Double)
  * 캠퍼스 주변 몇 km 범위라 평면 근사(등장방형)로 충분하다.
  */
 data class ShuttleRoute(val direction: ShuttleDirection, val points: List<GeoPoint>) {
-
     /** 각 점까지의 누적 거리(m). */
-    private val cumulative: DoubleArray = DoubleArray(points.size).also { acc ->
-        for (i in 1 until points.size) acc[i] = acc[i - 1] + distanceMeters(points[i - 1], points[i])
-    }
+    private val cumulative: DoubleArray =
+        DoubleArray(points.size).also { acc ->
+            for (i in 1 until points.size) acc[i] = acc[i - 1] + distanceMeters(points[i - 1], points[i])
+        }
 
     val lengthMeters: Double get() = cumulative.lastOrNull() ?: 0.0
 
@@ -30,10 +30,22 @@ data class ShuttleRoute(val direction: ShuttleDirection, val points: List<GeoPoi
             val (bx, by) = toLocal(b, a)
             val (px, py) = toLocal(point, a)
             val len2 = (bx - ax) * (bx - ax) + (by - ay) * (by - ay)
-            val t = if (len2 == 0.0) 0.0 else (((px - ax) * (bx - ax) + (py - ay) * (by - ay)) / len2).coerceIn(0.0, 1.0)
+            val t =
+                if (len2 == 0.0) {
+                    0.0
+                } else {
+                    (((px - ax) * (bx - ax) + (py - ay) * (by - ay)) / len2).coerceIn(
+                        0.0,
+                        1.0,
+                    )
+                }
             val off = hypot(px - (ax + (bx - ax) * t), py - (ay + (by - ay) * t))
             if (best == null || off < best.offMeters) {
-                best = Projection(alongMeters = cumulative[i] + (cumulative[i + 1] - cumulative[i]) * t, offMeters = off)
+                best =
+                    Projection(
+                        alongMeters = cumulative[i] + (cumulative[i + 1] - cumulative[i]) * t,
+                        offMeters = off,
+                    )
             }
         }
         return best
@@ -43,20 +55,30 @@ data class ShuttleRoute(val direction: ShuttleDirection, val points: List<GeoPoi
 }
 
 private const val METERS_PER_DEGREE = 111_320.0
+private const val FULL_TURN = 360.0
 
-private fun toLocal(p: GeoPoint, origin: GeoPoint): Pair<Double, Double> {
+private fun toLocal(
+    p: GeoPoint,
+    origin: GeoPoint,
+): Pair<Double, Double> {
     val x = (p.longitude - origin.longitude) * METERS_PER_DEGREE * cos(Math.toRadians(origin.latitude))
     val y = (p.latitude - origin.latitude) * METERS_PER_DEGREE
     return x to y
 }
 
-fun distanceMeters(a: GeoPoint, b: GeoPoint): Double {
+fun distanceMeters(
+    a: GeoPoint,
+    b: GeoPoint,
+): Double {
     val (x, y) = toLocal(b, a)
     return hypot(x, y)
 }
 
 /** a→b 진행 방향. 북쪽 0°, 시계 방향(지도 마커 회전값과 같은 기준). */
-fun bearingDegrees(a: GeoPoint, b: GeoPoint): Double {
+fun bearingDegrees(
+    a: GeoPoint,
+    b: GeoPoint,
+): Double {
     val (x, y) = toLocal(b, a)
-    return (Math.toDegrees(atan2(x, y)) + 360.0) % 360.0
+    return (Math.toDegrees(atan2(x, y)) + FULL_TURN) % FULL_TURN
 }
