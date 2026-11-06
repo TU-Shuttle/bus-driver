@@ -197,4 +197,13 @@
     <string name="distance_meters">%1$dm</string>
     <string name="distance_km">%1$.1fkm</string>
     <string name="driver_start_needs_route">운행할 노선을 먼저 골라 주세요.</string>
+    <string name="bus_label">버스</string>
+    <string name="bus_number_value">%1$d호차</string>
+    <string name="bus_number_choose">호차 번호를 정해 주세요</string>
+    <string name="bus_number_title">몇 호차인가요?</string>
+    <string name="bus_number_body">학생 앱에 이 번호로 보여요. 다른 기사와 겹치지 않게 차량에 붙은 번호를 넣어 주세요.</string>
+    <string name="bus_number_hint">1~99</string>
+    <string name="bus_number_suffix">호차</string>
+    <string name="bus_number_confirm">확인</string>
+    <string name="bus_number_locked">운행 중엔 바꿀 수 없어요</string>
 </resources>

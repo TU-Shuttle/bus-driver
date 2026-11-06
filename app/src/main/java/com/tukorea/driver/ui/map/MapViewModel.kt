@@ -224,7 +224,8 @@ class MapViewModel
 
                     // 운행/대기 중일 때만 위치를 서버로 전송
                     if (drivingStatus == DrivingStatus.Running || drivingStatus == DrivingStatus.Waiting) {
-                        val busId = getBusIdUseCase()
+                        // 호차 번호를 정하기 전엔 운행을 시작할 수 없지만, 혹시 없으면 보내지 않는다.
+                        val busId = getBusIdUseCase() ?: return@onEach
                         val statusString = drivingStatus.toServerString()
                         Log.d(TAG, "운행 상태: $drivingStatus - 위치 전송")
                         sendLocationUseCase(busId, location, statusString, routeRepository.selectedDirection.value?.name)
@@ -252,7 +253,7 @@ class MapViewModel
                 .onEach { drivingStatus ->
                     // 노선을 바꿔도 학생 앱에 바로 반영되도록 즉시 보낸다. 현재 위치가 있으면 즉시 상태와 함께 전송
                     _state.value.currentLocation?.let { location ->
-                        val busId = getBusIdUseCase()
+                        val busId = getBusIdUseCase() ?: return@let
                         val statusString = drivingStatus.toServerString()
                         Log.d(TAG, "운행 상태 변경: $drivingStatus - 즉시 전송")
                         sendLocationUseCase(busId, location, statusString, routeRepository.selectedDirection.value?.name)

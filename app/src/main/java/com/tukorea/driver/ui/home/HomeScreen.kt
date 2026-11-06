@@ -45,6 +45,16 @@ import com.tukorea.driver.domain.model.DrivingStatus
 import com.tukorea.driver.domain.model.RouteProgress
 import com.tukorea.driver.domain.model.ShuttleDirection
 import com.tukorea.driver.domain.model.ShuttleStop
+import com.tukorea.driver.domain.repository.BusNumberRepository
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import com.tukorea.driver.ui.common.distanceLabel
 import com.tukorea.driver.ui.common.label
 import com.tukorea.driver.ui.common.nameRes
@@ -96,8 +106,18 @@ fun DriverHomeRoute(
 
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
     var sheetHeight by remember { mutableStateOf(0.dp) }
-    // 노선 선택 시트. 노선 없이 [운행 시작]을 누르면 열리고, 고르면 바로 운행을 시작한다.
-    var picker by remember { mutableStateOf(PickerMode.Closed) }
+    // 호차 번호·노선 시트. 둘 중 빠진 게 있으면 [운행 시작]이 차례로 열고, 다 정하면 바로 운행을 시작한다.
+    var picker by remember { mutableStateOf<Picker>(Picker.Closed) }
+    fun continueStart(number: Int?, direction: ShuttleDirection?) {
+        picker = when {
+            number == null -> Picker.Number(thenStart = true)
+            direction == null -> Picker.Route(thenStart = true)
+            else -> {
+                viewModel.startDriving()
+                Picker.Closed
+            }
+        }
+    }
     val density = LocalDensity.current
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -129,44 +149,60 @@ fun DriverHomeRoute(
                 .onSizeChanged { sheetHeight = with(density) { it.height.toDp() } },
             status = uiState.drivingStatus,
             connection = mapState.webSocketConnectionState,
+            busNumber = uiState.busNumber,
             direction = uiState.direction,
             progress = mapState.progress,
-            onPickRoute = { picker = PickerMode.Change },
-            onStart = {
-                if (uiState.direction == null) picker = PickerMode.ThenStart else viewModel.startDriving()
-            },
+            onPickBusNumber = { picker = Picker.Number(thenStart = false) },
+            onPickRoute = { picker = Picker.Route(thenStart = false) },
+            onStart = { continueStart(uiState.busNumber, uiState.direction) },
             onWait = viewModel::startWaiting,
             onStop = viewModel::stopDriving,
         )
     }
 
-    if (picker != PickerMode.Closed) {
+    val current = picker
+    if (current != Picker.Closed) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
-            onDismissRequest = { picker = PickerMode.Closed },
+            onDismissRequest = { picker = Picker.Closed },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
-            RoutePicker(
-                selected = uiState.direction,
-                onSelect = { direction ->
-                    viewModel.selectDirection(direction)
-                    if (picker == PickerMode.ThenStart) viewModel.startDriving()
-                    picker = PickerMode.Closed
-                },
-            )
+            when (current) {
+                is Picker.Number -> BusNumberSheet(
+                    initial = uiState.busNumber,
+                    onConfirm = { number ->
+                        viewModel.setBusNumber(number)
+                        if (current.thenStart) continueStart(number, uiState.direction) else picker = Picker.Closed
+                    },
+                )
+                is Picker.Route -> RoutePicker(
+                    selected = uiState.direction,
+                    onSelect = { direction ->
+                        viewModel.selectDirection(direction)
+                        if (current.thenStart) continueStart(uiState.busNumber, direction) else picker = Picker.Closed
+                    },
+                )
+                Picker.Closed -> Unit
+            }
         }
     }
 }
 
-private enum class PickerMode { Closed, Change, ThenStart }
+private sealed interface Picker {
+    data object Closed : Picker
+    data class Number(val thenStart: Boolean) : Picker
+    data class Route(val thenStart: Boolean) : Picker
+}
 
 @Composable
 fun DriverSheet(
     status: DrivingStatus,
     connection: WebSocketConnectionState,
+    busNumber: Int?,
     direction: ShuttleDirection?,
     progress: RouteProgress?,
+    onPickBusNumber: () -> Unit,
     onPickRoute: () -> Unit,
     onStart: () -> Unit,
     onWait: () -> Unit,
@@ -187,8 +223,10 @@ fun DriverSheet(
             DriverStatusPanel(
                 status = status,
                 connection = connection,
+                busNumber = busNumber,
                 direction = direction,
                 progress = progress,
+                onPickBusNumber = onPickBusNumber,
                 onPickRoute = onPickRoute,
                 onStart = onStart,
                 onWait = onWait,
@@ -209,8 +247,10 @@ fun DriverSheet(
 fun DriverStatusPanel(
     status: DrivingStatus,
     connection: WebSocketConnectionState,
+    busNumber: Int?,
     direction: ShuttleDirection?,
     progress: RouteProgress?,
+    onPickBusNumber: () -> Unit,
     onPickRoute: () -> Unit,
     onStart: () -> Unit,
     onWait: () -> Unit,
@@ -254,7 +294,26 @@ fun DriverStatusPanel(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        RouteRow(direction = direction, onClick = onPickRoute)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        SettingRow(
+            label = stringResource(R.string.bus_label),
+            value = busNumber?.let { stringResource(R.string.bus_number_value, it) },
+            placeholder = stringResource(R.string.bus_number_choose),
+            // 운행 중에 번호를 바꾸면 이전 번호 버스가 학생 앱에 잠시 남는다.
+            onClick = onPickBusNumber.takeIf { !driving },
+            lockedHint = stringResource(R.string.bus_number_locked).takeIf { driving },
+        )
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = Inset),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+        SettingRow(
+            label = stringResource(R.string.route_label),
+            value = direction?.label(),
+            placeholder = stringResource(R.string.route_choose),
+            onClick = onPickRoute,
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Spacer(modifier = Modifier.height(16.dp))
 
         Box(modifier = Modifier.padding(horizontal = Inset)) {
@@ -304,44 +363,92 @@ private fun progressText(progress: RouteProgress, direction: ShuttleDirection?):
     }
 }
 
-/** 구분선 사이의 평평한 한 줄: 위에 작은 "노선", 아래 노선 이름, 오른쪽 "변경". */
+/** 평평한 설정 한 줄: 위에 작은 이름, 아래 값, 오른쪽 "변경". [onClick]이 없으면 잠긴 줄([lockedHint] 표시). */
 @Composable
-private fun RouteRow(direction: ShuttleDirection?, onClick: () -> Unit) {
+private fun SettingRow(
+    label: String,
+    value: String?,
+    placeholder: String,
+    onClick: (() -> Unit)?,
+    lockedHint: String? = null,
+) {
     val bus = MaterialTheme.busColors
-    Column {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = Inset, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.route_label),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = bus.textSecondary,
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = direction?.label() ?: stringResource(R.string.route_choose),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (direction == null) bus.textTertiary else MaterialTheme.colorScheme.onSurface,
-                )
-            }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = Inset, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodySmall, color = bus.textSecondary)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = value ?: placeholder,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (value == null) bus.textTertiary else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        if (onClick != null) {
             Text(
                 text = stringResource(R.string.route_change),
                 style = MaterialTheme.typography.bodyMedium,
                 color = bus.textSecondary,
             )
-            Icon(
-                imageVector = Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = bus.textSecondary,
-            )
+            Icon(imageVector = Icons.Rounded.ChevronRight, contentDescription = null, tint = bus.textSecondary)
+        } else if (lockedHint != null) {
+            Text(text = lockedHint, style = MaterialTheme.typography.bodySmall, color = bus.textTertiary)
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+/** 호차 번호 입력. 숫자만 받고 1~99일 때만 확인을 누를 수 있다. */
+@Composable
+private fun BusNumberSheet(initial: Int?, onConfirm: (Int) -> Unit) {
+    val bus = MaterialTheme.busColors
+    var text by remember { mutableStateOf(initial?.toString().orEmpty()) }
+    val number = text.toIntOrNull()?.takeIf { it in BusNumberRepository.VALID }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+
+    Column(
+        modifier = Modifier
+            .navigationBarsPadding()
+            .imePadding()
+            .padding(start = Inset, end = Inset, bottom = 16.dp),
+    ) {
+        Text(text = stringResource(R.string.bus_number_title), style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.bus_number_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = bus.textSecondary,
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        OutlinedTextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focus),
+            value = text,
+            onValueChange = { input -> text = input.filter(Char::isDigit).take(2) },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.headlineMedium,
+            placeholder = { Text(stringResource(R.string.bus_number_hint), style = MaterialTheme.typography.headlineMedium) },
+            suffix = { Text(stringResource(R.string.bus_number_suffix), style = MaterialTheme.typography.titleMedium) },
+            shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { number?.let(onConfirm) }),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.onSurface,
+            ),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        BusButton(
+            text = stringResource(R.string.bus_number_confirm),
+            onClick = { number?.let(onConfirm) },
+            enabled = number != null,
+        )
     }
 }
 
@@ -429,8 +536,10 @@ private fun DriverSheetRunningPreview() {
             DriverSheet(
                 status = DrivingStatus.Running,
                 connection = WebSocketConnectionState.Connected,
+                busNumber = 3,
                 direction = ShuttleDirection.STATION_TO_CAMPUS1,
                 progress = RouteProgress(ShuttleStop.CAMPUS1, 820.0, isOffRoute = false),
+                onPickBusNumber = {},
                 onPickRoute = {},
                 onStart = {},
                 onWait = {},

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.tukorea.driver.data.location.LocationServiceManager
 import com.tukorea.driver.domain.model.DrivingStatus
 import com.tukorea.driver.domain.model.ShuttleDirection
+import com.tukorea.driver.domain.repository.BusNumberRepository
 import com.tukorea.driver.domain.repository.RouteRepository
 import com.tukorea.driver.domain.usecase.GetDrivingStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ constructor(
     private val getDrivingStatusUseCase: GetDrivingStatusUseCase,
     private val locationServiceManager: LocationServiceManager,
     private val routeRepository: RouteRepository,
+    private val busNumberRepository: BusNumberRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -55,6 +57,21 @@ constructor(
             .launchIn(viewModelScope)
     }
 
+    init {
+        busNumberRepository.number
+            .onEach { number -> _uiState.value = _uiState.value.copy(busNumber = number) }
+            .launchIn(viewModelScope)
+    }
+
+    /**
+     * 호차 번호를 정한다. 운행 중에 바꾸면 학생 앱에 이전 번호 버스가 잠시 남으므로 운행 전에만 바꿀 수 있다.
+     */
+    fun setBusNumber(number: Int) {
+        if (_uiState.value.drivingStatus != DrivingStatus.Stop) return
+        if (number !in BusNumberRepository.VALID) return
+        busNumberRepository.set(number)
+    }
+
     /** 운행 노선을 고른다. 운행 중에 바꾸면(예: 종점에서 반대 방향으로) 바로 학생 앱에 반영된다. */
     fun selectDirection(direction: ShuttleDirection) {
         routeRepository.select(direction)
@@ -67,7 +84,8 @@ constructor(
      * 운행을 시작합니다.
      */
     fun startDriving() {
-        if (_uiState.value.direction == null) return
+        // 화면 상태가 아니라 저장소를 직접 본다(번호·노선을 고른 직후 바로 시작하는 경우).
+        if (routeRepository.selectedDirection.value == null || busNumberRepository.number.value == null) return
         getDrivingStatusUseCase.updateStatus(DrivingStatus.Running)
     }
 
