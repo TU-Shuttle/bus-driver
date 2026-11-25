@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 버스 정면을 단순화한 글리프. 108 격자의 안전 영역(지름 66) 안에 들어간다. -->
+<!-- "TU" 글자(Inter ExtraBold 윤곽선). 108 격자 가운데, 안전 영역(지름 66) 안에 들어간다. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#FF000000" android:fillType="evenOdd" android:pathData="M44,33H64A7,7 0 0,1 71,40V62A7,7 0 0,1 64,69H44A7,7 0 0,1 37,62V40A7,7 0 0,1 44,33ZM45,39H63A3,3 0 0,1 66,42V50A3,3 0 0,1 63,53H45A3,3 0 0,1 42,50V42A3,3 0 0,1 45,39ZM43.5,61A2.5,2.5 0 1,0 48.5,61A2.5,2.5 0 1,0 43.5,61ZM59.5,61A2.5,2.5 0 1,0 64.5,61A2.5,2.5 0 1,0 59.5,61Z" />
-    <path android:fillColor="#FF000000" android:pathData="M40,69H47V73A2,2 0 0,1 45,75H42A2,2 0 0,1 40,73ZM61,69H68V73A2,2 0 0,1 66,75H63A2,2 0 0,1 61,73Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M32.15 46.26V41.47H52.96V46.26H45.48V66.21H39.63V46.26ZM65.41 66.53Q62.29 66.53 59.94 65.41Q57.59 64.28 56.29 62.23Q54.99 60.18 54.99 57.43V41.47H60.85V56.95Q60.85 58.24 61.43 59.25Q62.01 60.27 63.03 60.84Q64.05 61.41 65.41 61.41Q66.77 61.41 67.81 60.84Q68.85 60.27 69.42 59.25Q69.99 58.24 69.99 56.95V41.47H75.85V57.43Q75.85 60.18 74.54 62.23Q73.23 64.28 70.88 65.41Q68.53 66.53 65.41 66.53Z" />
 </vector>
